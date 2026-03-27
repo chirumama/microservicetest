@@ -1,0 +1,172 @@
+.login-card {
+  width: 420px;
+  background: #fff;
+  padding: 30px;
+  border-radius: 14px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Input Group */
+.input-group-custom {
+  margin-bottom: 18px;
+}
+
+.input-group-custom label {
+  font-size: 14px;
+  color: black;
+  margin-bottom: 6px;
+  display: block;
+}
+
+/* Input Wrapper */
+.input-wrapper {
+  position: relative;
+}
+
+.input-wrapper input,
+.input-wrapper select {
+  width: 100%;
+  height: 50px;
+  border-radius: 12px;
+  border: 2px solid #2d6cdf;
+  padding-left: 45px;
+  padding-right: 45px;
+  outline: none;
+  font-size: 14px;
+}
+
+/* Icons */
+.icon-left {
+  position: absolute;
+  top: 50%;
+  left: 15px;
+  transform: translateY(-50%);
+  color: #777;
+}
+
+.icon-right {
+  position: absolute;
+  top: 50%;
+  right: 15px;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #777;
+}
+
+/* Button */
+.login-btn {
+  width: 100%;
+  height: 50px;
+  background: #2d6cdf;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-weight: 500;
+  margin-top: 10px;
+}
+
+/* Error */
+.error {
+  color: red;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+.error-border {
+  border-color: red !important;
+}
+
+/* Forgot */
+.forgot-link {
+  color: #2d4aa0;
+  text-decoration: none;
+}
+
+/* Background container */
+.dashboard-container {
+  padding: 40px;
+  background: linear-gradient(135deg, #2d6cdf, #1e4bb8);
+  min-height: 100vh;
+  color: #fff;
+}
+
+/* Card */
+.action-card {
+  background: #fff;
+  color: #000;
+  padding: 25px;
+  border-radius: 16px;
+  max-width: 500px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+/* Button group */
+.btn-group-custom {
+  display: flex;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+/* Create Button */
+.btn-create {
+  flex: 1;
+  height: 55px;
+  border-radius: 16px;
+  border: none;
+  font-weight: 500;
+  font-size: 16px;
+  background: #f3f3f3;
+  color: #2d6cdf;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* Manage Button */
+.btn-manage {
+  flex: 1;
+  height: 55px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  font-weight: 500;
+  font-size: 16px;
+  background: linear-gradient(135deg, #4c7df0, #2d6cdf);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* Hover Effects */
+.btn-create:hover {
+  background: #e6e6e6;
+}
+
+.btn-manage:hover {
+  opacity: 0.9;
+}
+
+.custom-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.custom-modal-card {
+  background: #fff;
+  color: #000;
+  width: 700px; 
+  max-width: 90%;
+  border-radius: 10px;
+  padding: 25px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
