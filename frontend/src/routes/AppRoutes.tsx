@@ -6,6 +6,7 @@ import ManageApplications from "../pages/applications/ManageApplications";
 import ApplicationDetails from "../pages/applications/ApplicationDetails";
 import SuperAdminDashboard from "../pages/dashboard/SuperAdminDashboard";
 import { useAuth } from "../context/AuthContext";
+import type { JSX } from "react";
 
 function ProtectedRoute({ children, allowedRoles }: { children: JSX.Element; allowedRoles?: string[] }) {
   const { user, isLoading } = useAuth();

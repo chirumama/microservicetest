@@ -23,7 +23,7 @@ interface InputFieldProps {
   helperText?: string;
   startIcon?: React.ReactNode;
   endIcon?: React.ReactNode;
-
+  required?: boolean;
   select?: boolean;
   options?: OptionType[];
 }

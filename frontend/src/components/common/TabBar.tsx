@@ -19,7 +19,6 @@ const TabBar: React.FC<TabBarProps> = ({
   value,
   onChange,
   centered = false,
-  variant = "standard",
   disabled = false,
 }) => {
   return (
