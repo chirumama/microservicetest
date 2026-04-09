@@ -2,19 +2,11 @@ pipeline {
     agent any
 
     environment {
-        REGISTRY = "192.168.17.133"
-        PROJECT = "microservice_hub"
-        BACKEND_IMAGE = "${REGISTRY}/${PROJECT}/backend:v1"
-        FRONTEND_IMAGE = "${REGISTRY}/${PROJECT}/frontend:v1"
+        BACKEND_IMAGE = "192.168.17.133/microservice_hub/backend:v1"
+        FRONTEND_IMAGE = "192.168.17.133/microservice_hub/frontend:v1"
     }
 
     stages {
-
-        stage('Checkout Code') {
-            steps {
-                git branch: 'main', url: 'https://github.com/paypoint/MicroserviceDashboard.git'
-            }
-        }
 
         stage('Build Backend Image') {
             steps {
