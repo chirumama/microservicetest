@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      nodeSelector:
+        role: app
+      containers:
+      - name: backend
+        image: 192.168.17.133/microservice_hub/backend:v1
+        ports:
+        - containerPort: 80
+        env:
+        - name: ConnectionStrings__DefaultConnection
+          value: "Server=mssql-service;Database=microservice_hub;User Id=sa;Password=@Myopia980!"
