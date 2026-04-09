@@ -10,7 +10,6 @@ export interface TabBarProps {
   value: number;
   onChange: (index: number) => void;
   centered?: boolean;
-  variant?: "standard" | "scrollable";
   disabled?: boolean;
 }
 

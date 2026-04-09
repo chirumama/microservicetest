@@ -5,27 +5,21 @@ import {
   MenuItem,
 } from "@mui/material";
 
-interface OptionType {
-  label: string;
-  value: string;
-}
-
 interface InputFieldProps {
-  label: string;
+  label?: string;
+  type?: string;
   value?: string;
-  onChange?: (
-    e: React.ChangeEvent<HTMLInputElement> 
-  ) => void;
-  type?: "text" | "password" | "email";
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   placeholder?: string;
   fullWidth?: boolean;
+  required?: boolean;        // ← add this line
   error?: boolean;
   helperText?: string;
   startIcon?: React.ReactNode;
   endIcon?: React.ReactNode;
-  required?: boolean;
+  
   select?: boolean;
-  options?: OptionType[];
+  options?: { value: string; label: string }[];
 }
 
 const InputField: React.FC<InputFieldProps> = ({
@@ -36,6 +30,7 @@ const InputField: React.FC<InputFieldProps> = ({
   placeholder,
   fullWidth = false,
   error = false,
+  required,
   helperText,
   startIcon,
   endIcon,
@@ -51,6 +46,7 @@ const InputField: React.FC<InputFieldProps> = ({
       placeholder={placeholder}
       fullWidth={fullWidth}
       error={error}
+      required={required} 
       helperText={helperText}
       variant="outlined"
       select={select}
