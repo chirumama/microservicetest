@@ -2,6 +2,7 @@
 
 using MicroserviceHub.API.Application.DTOs.Response;
 using MicroserviceHub.API.Domain.Entities;
+using MicroserviceHub.API.Infrastructure.ExternalServices;
 
 
 namespace MicroserviceHub.API.Application.Interfaces
@@ -14,6 +15,7 @@ namespace MicroserviceHub.API.Application.Interfaces
         Task<List<GetApplicationResponse>> GetApplicationsByUser(int userId);
         Task<List<GetApplicationResponse>> GetAllApplications();
 
+        Task DeleteApplication(int appId);
         Task<Domain.Entities.Application> GetApplicationById(int appId);
 
         Task<GetApplicationDetailsResponse> GetApplicationDetails(int appId);
@@ -24,7 +26,8 @@ namespace MicroserviceHub.API.Application.Interfaces
         Task UpdateApiSecret(int keyId, string newSecret);
         Task RevokeApiKey(int keyId);
         Task<IEnumerable<Microservice>> GetMicroservicesAsync();
-
+        Task<ApiKeyInfoResponse> GetApiKeyById(int keyId);
+        Task UpdateApiKeyAndSecret(int keyId, string newAppKey, string newAppSecret);
         Task BeginTransaction();
         Task CommitTransaction();
         Task RollbackTransaction();

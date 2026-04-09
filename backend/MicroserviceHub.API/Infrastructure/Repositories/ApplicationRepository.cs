@@ -3,6 +3,7 @@ using MicroserviceHub.API.Application.DTOs.Response;
 using MicroserviceHub.API.Application.Interfaces;
 using MicroserviceHub.API.Domain.Entities;
 using Microsoft.Data.SqlClient;
+using MicroserviceHub.API.Infrastructure.ExternalServices;
 
 namespace MicroserviceHub.API.Infrastructure.Repositories
 {
@@ -28,7 +29,33 @@ namespace MicroserviceHub.API.Infrastructure.Repositories
 
             return await connection.ExecuteScalarAsync<int>(query, app);
         }
+public async Task DeleteApplication(int appId)
+{
+    using var connection = new SqlConnection(_connectionString);
+    // Delete keys first (FK constraint), then the application
+    await connection.ExecuteAsync(
+        "DELETE FROM ApiKeys WHERE ApplicationId = @Id", new { Id = appId });
+    await connection.ExecuteAsync(
+        "DELETE FROM Applications WHERE Id = @Id", new { Id = appId });
+}
+public async Task UpdateApiKeyAndSecret(int keyId, string newAppKey, string newAppSecret)
+{
+    using var connection = new SqlConnection(_connectionString);
 
+    var query = @"
+        UPDATE ApiKeys
+        SET AppKey        = @AppKey,
+            AppSecretHash = @AppSecret,
+            UpdatedAt     = GETUTCDATE()
+        WHERE Id = @Id";
+
+    await connection.ExecuteAsync(query, new
+    {
+        Id        = keyId,
+        AppKey    = newAppKey,
+        AppSecret = newAppSecret
+    });
+}
         public async Task CreateApiKey(int appId, string environment, string apiKey, string apiSecret)
         {
             using var connection = new SqlConnection(_connectionString);
@@ -214,5 +241,22 @@ namespace MicroserviceHub.API.Infrastructure.Repositories
             _transaction?.Rollback();
             if (_connection != null) await _connection.CloseAsync();
         }
+        public async Task<ApiKeyInfoResponse> GetApiKeyById(int keyId)
+{
+    using var connection = new SqlConnection(_connectionString);
+
+    var query = @"
+        SELECT Id, ApplicationId, Environment, AppKey
+        FROM ApiKeys
+        WHERE Id = @Id";
+
+    var result = await connection.QueryFirstOrDefaultAsync<ApiKeyInfoResponse>(
+        query, new { Id = keyId });
+
+    if (result == null)
+        throw new KeyNotFoundException($"ApiKey with Id {keyId} not found");
+
+    return result;
+}
     }
 }

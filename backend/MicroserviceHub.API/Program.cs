@@ -1,4 +1,5 @@
 using MicroserviceHub.API.Application.Interfaces;
+using MicroserviceHub.API.Infrastructure.ExternalServices;
 using MicroserviceHub.API.Application.Services;
 using MicroserviceHub.API.Infrastructure.Repositories;
 using MicroserviceHub.API.Middleware;
@@ -135,7 +136,8 @@ builder.Services.AddSwaggerGen(options =>
 
 builder.Services.AddScoped<IAuthService, MicroserviceHub.API.Application.Services.AuthService>();
 builder.Services.AddSingleton<JwtTokenGenerator>();
-
+builder.Services.AddHttpClient<ApisixService>();
+builder.Services.AddScoped<ApisixService>();
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
