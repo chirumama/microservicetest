@@ -5,7 +5,7 @@ import { IoList } from "react-icons/io5";
 import { useAuth } from "../../context/AuthContext";
 import CreateApplicationModal from "../applications/CreateApplication";
 
-export default function Dashboard(): JSX.Element {
+export default function Dashboard()  {
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
   const { user, logout } = useAuth();

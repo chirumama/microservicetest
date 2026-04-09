@@ -10,7 +10,6 @@ export interface TabBarProps {
   value: number;
   onChange: (index: number) => void;
   centered?: boolean;
-  variant?: "standard" | "scrollable";
   disabled?: boolean;
 }
 
@@ -19,7 +18,6 @@ const TabBar: React.FC<TabBarProps> = ({
   value,
   onChange,
   centered = false,
-  variant = "standard",
   disabled = false,
 }) => {
   return (

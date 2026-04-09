@@ -7,7 +7,7 @@ import ApplicationDetails from "../pages/applications/ApplicationDetails";
 import SuperAdminDashboard from "../pages/dashboard/SuperAdminDashboard";
 import { useAuth } from "../context/AuthContext";
 
-function ProtectedRoute({ children, allowedRoles }: { children: JSX.Element; allowedRoles?: string[] }) {
+function ProtectedRoute({ children, allowedRoles }: { children: React.ReactElement; allowedRoles?: string[] }) {
   const { user, isLoading } = useAuth();
   if (isLoading) return <div className="d-flex vh-100 justify-content-center align-items-center text-muted">Loading...</div>;
   if (!user) return <Navigate to="/" replace />;
@@ -15,7 +15,7 @@ function ProtectedRoute({ children, allowedRoles }: { children: JSX.Element; all
   return children;
 }
 
-export default function AppRoutes(): JSX.Element {
+export default function AppRoutes(){
   return (
     <BrowserRouter>
       <Routes>
