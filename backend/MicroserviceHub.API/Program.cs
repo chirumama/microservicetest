@@ -1,19 +1,15 @@
 using MicroserviceHub.API.Application.Interfaces;
-using MicroserviceHub.API.Infrastructure.ExternalServices;
 using MicroserviceHub.API.Application.Services;
 using MicroserviceHub.API.Infrastructure.Repositories;
+using MicroserviceHub.API.Infrastructure.ExternalServices;
 using MicroserviceHub.API.Middleware;
-using MicroserviceHub.API.Utilities;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using Serilog; 
-using System.Text;
+using Serilog;
+
 Console.WriteLine("APP STARTING...");
 var builder = WebApplication.CreateBuilder(args);
 
-// Replace with this:
 builder.Host.UseSerilog((context, services, configuration) =>
 {
     configuration
@@ -23,75 +19,43 @@ builder.Host.UseSerilog((context, services, configuration) =>
         .MinimumLevel.Information()
         .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
         .MinimumLevel.Override("System", Serilog.Events.LogEventLevel.Warning)
-
-        // Console — everything
         .WriteTo.Console(
-            outputTemplate: "{Timestamp:HH:mm:ss} [{Level:u3}] {Message:lj}{NewLine}{Exception}"
-        )
-
-        // request-.log — only REQUEST logs (written by middleware)
+            outputTemplate: "{Timestamp:HH:mm:ss} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
         .WriteTo.Logger(lc => lc
             .Filter.ByIncludingOnly(e =>
                 e.Properties.ContainsKey("LogType") &&
                 e.Properties["LogType"].ToString() == "\"Request\"")
-            .WriteTo.File(
-                path: "logs/request-.log",
-                rollingInterval: RollingInterval.Day,
+            .WriteTo.File(path: "logs/request-.log", rollingInterval: RollingInterval.Day,
                 retainedFileCountLimit: 30,
-                outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u3}] {Message:lj}{NewLine}{Exception}"
-            )
-        )
-
-        // response-.log — only RESPONSE logs (written by middleware)
+                outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u3}] {Message:lj}{NewLine}{Exception}"))
         .WriteTo.Logger(lc => lc
             .Filter.ByIncludingOnly(e =>
                 e.Properties.ContainsKey("LogType") &&
                 e.Properties["LogType"].ToString() == "\"Response\"")
-            .WriteTo.File(
-                path: "logs/response-.log",
-                rollingInterval: RollingInterval.Day,
+            .WriteTo.File(path: "logs/response-.log", rollingInterval: RollingInterval.Day,
                 retainedFileCountLimit: 30,
-                outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u3}] {Message:lj}{NewLine}{Exception}"
-            )
-        )
-
-        // error-.log — only Error level and above
+                outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u3}] {Message:lj}{NewLine}{Exception}"))
         .WriteTo.Logger(lc => lc
-            .Filter.ByIncludingOnly(e =>
-                e.Level >= Serilog.Events.LogEventLevel.Error)
-            .WriteTo.File(
-                path: "logs/error-.log",
-                rollingInterval: RollingInterval.Day,
+            .Filter.ByIncludingOnly(e => e.Level >= Serilog.Events.LogEventLevel.Error)
+            .WriteTo.File(path: "logs/error-.log", rollingInterval: RollingInterval.Day,
                 retainedFileCountLimit: 30,
-                outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u3}] {Message:lj}{NewLine}{Exception}"
-            )
-        )
-
-        // application-.log — everything that is NOT request/response/error
-        // i.e. your Log.Information(...) calls from services
+                outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u3}] {Message:lj}{NewLine}{Exception}"))
         .WriteTo.Logger(lc => lc
             .Filter.ByIncludingOnly(e =>
                 !e.Properties.ContainsKey("LogType") &&
                 e.Level < Serilog.Events.LogEventLevel.Error)
-            .WriteTo.File(
-                path: "logs/application-.log",
-                rollingInterval: RollingInterval.Day,
+            .WriteTo.File(path: "logs/application-.log", rollingInterval: RollingInterval.Day,
                 retainedFileCountLimit: 30,
-                outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u3}] {Message:lj}{NewLine}{Exception}"
-            )
-        );
+                outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u3}] {Message:lj}{NewLine}{Exception}"));
 });
 
-// CORS — allow Vite dev server and preview
+// ── CORS ─────────────────────────────────────────────────────────────────────
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
         policy
-            .WithOrigins(
-                "http://localhost:5173",
-                "http://localhost:4173"
-            )
+            .WithOrigins("http://localhost:5173", "http://localhost:4173")
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
@@ -102,77 +66,46 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
-    options.SwaggerDoc("v1", new OpenApiInfo
-    {
-        Title   = "MicroserviceHub.API",
-        Version = "v1"
-    });
+    options.SwaggerDoc("v1", new OpenApiInfo { Title = "MicroserviceHub.API", Version = "v1" });
 
-    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    // Swagger now uses X-User-Id + X-User-Role instead of Bearer token
+    options.AddSecurityDefinition("X-User-Id", new OpenApiSecurityScheme
     {
-        Name        = "Authorization",
-        Type        = SecuritySchemeType.Http,
-        Scheme      = "Bearer",
-        BearerFormat = "JWT",
-        In          = ParameterLocation.Header,
-        Description = "Enter 'Bearer' [space] and then your token"
+        Name = "X-User-Id",
+        Type = SecuritySchemeType.ApiKey,
+        In   = ParameterLocation.Header,
+        Description = "User ID returned from login"
     });
-
+    options.AddSecurityDefinition("X-User-Role", new OpenApiSecurityScheme
+    {
+        Name = "X-User-Role",
+        Type = SecuritySchemeType.ApiKey,
+        In   = ParameterLocation.Header,
+        Description = "Role ID returned from login (1=User, 2=Admin, 3=SuperAdmin)"
+    });
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id   = "Bearer"
-                }
-            },
+            new OpenApiSecurityScheme { Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "X-User-Id" } },
+            new string[] {}
+        },
+        {
+            new OpenApiSecurityScheme { Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "X-User-Role" } },
             new string[] {}
         }
     });
 });
 
-builder.Services.AddScoped<IAuthService, MicroserviceHub.API.Application.Services.AuthService>();
-builder.Services.AddSingleton<JwtTokenGenerator>();
+// ── APISix HttpClient ─────────────────────────────────────────────────────────
 builder.Services.AddHttpClient<ApisixService>();
 builder.Services.AddScoped<ApisixService>();
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme    = JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(options =>
-{
-    options.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuer           = true,
-        ValidateAudience         = true,
-        ValidateLifetime         = true,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer              = builder.Configuration["Jwt:Issuer"],
-        ValidAudience            = builder.Configuration["Jwt:Audience"],
-        IssuerSigningKey         = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
-    };
 
-    // Return 401 JSON instead of redirect
-    options.Events = new JwtBearerEvents
-    {
-        OnChallenge = async ctx =>
-        {
-            ctx.HandleResponse();
-            ctx.Response.StatusCode  = 401;
-            ctx.Response.ContentType = "application/json";
-            await ctx.Response.WriteAsync("{\"error\":\"Unauthorized\"}");
-        }
-    };
-});
-
+// ── Services ─────────────────────────────────────────────────────────────────
+builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 builder.Services.AddScoped<IApplicationService, ApplicationService>();
 builder.Services.AddScoped<IApplicationRepository, ApplicationRepository>();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -181,22 +114,18 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseMiddleware<RequestResponseLoggingMiddleware>();  
+app.UseMiddleware<RequestResponseLoggingMiddleware>();
 app.UseCors("AllowFrontend");
-app.UseAuthentication();
-app.UseAuthorization();
+
 Console.WriteLine("APP RUNNING...");
-// Global exception handler — returns JSON so the frontend can read the message
+
+// ── Global exception handler ──────────────────────────────────────────────────
 app.UseExceptionHandler(errorApp =>
 {
     errorApp.Run(async context =>
     {
         var error = context.Features.Get<IExceptionHandlerFeature>();
-
-        if (error != null)
-        {
-            Log.Error(error.Error, "Unhandled Exception");
-        }
+        if (error != null) Log.Error(error.Error, "Unhandled Exception");
 
         var statusCode = error?.Error switch
         {
@@ -207,7 +136,6 @@ app.UseExceptionHandler(errorApp =>
 
         context.Response.StatusCode  = statusCode;
         context.Response.ContentType = "application/json";
-
         var message = error?.Error?.Message ?? "Internal Server Error";
         await context.Response.WriteAsync($"{{\"error\":\"{message}\"}}");
     });

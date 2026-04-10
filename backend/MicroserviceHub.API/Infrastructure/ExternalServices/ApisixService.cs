@@ -15,16 +15,15 @@ namespace MicroserviceHub.API.Infrastructure.ExternalServices
             _http.DefaultRequestHeaders.Add("X-API-KEY", config["Apisix:AdminKey"]!);
         }
 
-        public async Task RegisterConsumerAsync(string username, string appKey)
+        // Registers consumer with basic-auth — validates BOTH AppKey and AppSecret
+        public async Task RegisterConsumerAsync(string username, string appKey, string appSecret)
         {
-            // APISix plugin name is "key-auth" with a hyphen.
-            // C# anonymous objects cannot have hyphens in property names,
-            // so we build the JSON manually as a string to get the exact format.
             var body = $@"{{
                 ""username"": ""{username}"",
                 ""plugins"": {{
-                    ""key-auth"": {{
-                        ""key"": ""{appKey}""
+                    ""basic-auth"": {{
+                        ""username"": ""{appKey}"",
+                        ""password"": ""{appSecret}""
                     }}
                 }}
             }}";
@@ -40,10 +39,9 @@ namespace MicroserviceHub.API.Infrastructure.ExternalServices
             }
         }
 
-        public async Task UpdateConsumerKeyAsync(string username, string newAppKey)
+        public async Task UpdateConsumerKeyAsync(string username, string newAppKey, string newAppSecret)
         {
-            // Same structure as register — PUT is idempotent
-            await RegisterConsumerAsync(username, newAppKey);
+            await RegisterConsumerAsync(username, newAppKey, newAppSecret);
         }
 
         public async Task DeleteConsumerAsync(string username)
@@ -51,7 +49,6 @@ namespace MicroserviceHub.API.Infrastructure.ExternalServices
             var response = await _http.DeleteAsync(
                 $"{_adminUrl}/apisix/admin/consumers/{username}");
 
-            // 404 means already gone — treat as success
             if (!response.IsSuccessStatusCode &&
                 response.StatusCode != System.Net.HttpStatusCode.NotFound)
             {
@@ -59,71 +56,66 @@ namespace MicroserviceHub.API.Infrastructure.ExternalServices
                 throw new Exception($"APISix consumer delete failed [{response.StatusCode}]: {error}");
             }
         }
-        // Called when admin enables/disables a microservice for an application.
-// routeId = the APISix route ID (e.g. "iplookup")
-// consumerUsername = e.g. "16_Development"
-// allow = true to add to allowlist, false to remove
-public async Task UpdateRouteAllowlistAsync(string routeId, string consumerUsername, bool allow)
-{
-    // Step 1 — GET the current route so we have the full config
-    var getResponse = await _http.GetAsync(
-        $"{_adminUrl}/apisix/admin/routes/{routeId}");
 
-    if (!getResponse.IsSuccessStatusCode)
-    {
-        var err = await getResponse.Content.ReadAsStringAsync();
-        throw new Exception($"APISix get route failed [{getResponse.StatusCode}]: {err}");
-    }
-
-    var routeJson = await getResponse.Content.ReadAsStringAsync();
-
-    // Step 2 — Parse the current allowlist from the response
-    // Response structure: { "value": { "plugins": { "consumer-restriction": { "allowlist": [...] } } } }
-    var allowlist = new List<string>();
-    using var doc = JsonDocument.Parse(routeJson);
-
-    if (doc.RootElement.TryGetProperty("value", out var val) &&
-        val.TryGetProperty("plugins", out var plugins) &&
-        plugins.TryGetProperty("consumer-restriction", out var cr) &&
-        cr.TryGetProperty("whitelist", out var al))
-    {
-        foreach (var item in al.EnumerateArray())
+        public async Task UpdateRouteAllowlistAsync(string routeId, string consumerUsername, bool allow)
         {
-            var entry = item.GetString();
-            if (entry != null) allowlist.Add(entry);
+            var getResponse = await _http.GetAsync(
+                $"{_adminUrl}/apisix/admin/routes/{routeId}");
+
+            if (!getResponse.IsSuccessStatusCode)
+            {
+                var err = await getResponse.Content.ReadAsStringAsync();
+                throw new Exception($"APISix get route failed [{getResponse.StatusCode}]: {err}");
+            }
+
+            var routeJson = await getResponse.Content.ReadAsStringAsync();
+            var whitelist = new List<string>();
+
+            using var doc = JsonDocument.Parse(routeJson);
+            if (doc.RootElement.TryGetProperty("value", out var val) &&
+                val.TryGetProperty("plugins", out var plugins) &&
+                plugins.TryGetProperty("consumer-restriction", out var cr) &&
+                cr.TryGetProperty("whitelist", out var wl))
+            {
+                foreach (var item in wl.EnumerateArray())
+                {
+                    var entry = item.GetString();
+                    if (entry != null) whitelist.Add(entry);
+                }
+            }
+
+            if (allow && !whitelist.Contains(consumerUsername))
+                whitelist.Add(consumerUsername);
+            else if (!allow)
+                whitelist.Remove(consumerUsername);
+
+            string patchBody;
+            if (whitelist.Count == 0)
+            {
+                patchBody = @"{ ""plugins"": { ""consumer-restriction"": null } }";
+            }
+            else
+            {
+                var whitelistJson = "[" + string.Join(",", whitelist.Select(x => $"\"{x}\"")) + "]";
+                patchBody = $@"{{
+                    ""plugins"": {{
+                        ""consumer-restriction"": {{
+                            ""whitelist"": {whitelistJson}
+                        }}
+                    }}
+                }}";
+            }
+
+            var patchContent = new StringContent(patchBody, Encoding.UTF8, "application/json");
+            var patchReq = new HttpRequestMessage(HttpMethod.Patch,
+                $"{_adminUrl}/apisix/admin/routes/{routeId}") { Content = patchContent };
+
+            var patchResp = await _http.SendAsync(patchReq);
+            if (!patchResp.IsSuccessStatusCode)
+            {
+                var err = await patchResp.Content.ReadAsStringAsync();
+                throw new Exception($"APISix update whitelist failed [{patchResp.StatusCode}]: {err}");
+            }
         }
-    }
-
-    // Step 3 — Add or remove the consumer
-    if (allow && !allowlist.Contains(consumerUsername))
-        allowlist.Add(consumerUsername);
-    else if (!allow)
-        allowlist.Remove(consumerUsername);
-
-    // Step 4 — Build the allowlist JSON array as a string
-    var allowlistJson = "[" + string.Join(",", allowlist.Select(x => $"\"{x}\"")) + "]";
-
-    // Step 5 — PATCH only the consumer-restriction plugin back
-    var patchBody = $@"{{
-    ""plugins"": {{
-        ""consumer-restriction"": {{
-            ""whitelist"": {allowlistJson}
-        }}
-    }}
-}}";
-
-
-    var content = new StringContent(patchBody, Encoding.UTF8, "application/json");
-    var patchReq = new HttpRequestMessage(HttpMethod.Patch,
-        $"{_adminUrl}/apisix/admin/routes/{routeId}") { Content = content };
-
-    var patchResp = await _http.SendAsync(patchReq);
-
-    if (!patchResp.IsSuccessStatusCode)
-    {
-        var err = await patchResp.Content.ReadAsStringAsync();
-        throw new Exception($"APISix update allowlist failed [{patchResp.StatusCode}]: {err}");
-    }
-}
     }
 }
