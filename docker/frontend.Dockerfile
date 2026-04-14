@@ -4,11 +4,11 @@ COPY frontend/package*.json ./
 RUN npm install
 COPY frontend/. ./
 
-# Add this - build arg for API URL
-ARG VITE_API_URL=http://192.168.17.129:30081
-ENV VITE_API_URL=$VITE_API_URL
+ARG VITE_API_BASE_URL=http://192.168.17.129:30081/v1.0.1
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 
 RUN npm run build
+
 FROM nginx:alpine
 COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 80
