@@ -9,7 +9,7 @@ COPY backend/MicroserviceHub.API/. ./
 RUN dotnet publish -c Release -o /out
 
 # ---------- RUNTIME STAGE ----------
-FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine
+FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
 
 COPY --from=build /out ./
