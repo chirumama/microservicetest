@@ -42,20 +42,14 @@ pipeline {
 
         stage('Deploy to Kubernetes') {
             steps {
-                withCredentials([file(credentialsId: 'k8s-kubeconfig', variable: 'KUBECONFIG')]) {
                 sh '''
-                mkdir -p /tmp/kube
-                cp $KUBECONFIG /tmp/kube/config
-                chmod 600 /tmp/kube/config
-                export KUBECONFIG=/tmp/kube/config
-                sed -i "s|BACKEND_IMAGE_PLACEHOLDER|$BACKEND_IMAGE|g" k8s/backend-deployment.yaml
-                sed -i "s|FRONTEND_IMAGE_PLACEHOLDER|$FRONTEND_IMAGE|g" k8s/frontend-deployment.yaml
-                kubectl apply -f k8s/
-                rm -rf /tmp/kube
+                    export KUBECONFIG=/var/lib/jenkins/.kube/config
+                    sed -i "s|BACKEND_IMAGE_PLACEHOLDER|${BACKEND_IMAGE}|g" k8s/backend-deployment.yaml
+                    sed -i "s|FRONTEND_IMAGE_PLACEHOLDER|${FRONTEND_IMAGE}|g" k8s/frontend-deployment.yaml
+                    kubectl apply -f k8s/
                 '''
-                }
             }
-        }   
+        }
     }
 
     post {
