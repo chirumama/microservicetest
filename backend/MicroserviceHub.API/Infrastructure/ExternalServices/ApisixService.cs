@@ -43,38 +43,54 @@ namespace MicroserviceHub.API.Infrastructure.ExternalServices
         throw new Exception($"APISix consumer register failed [{response.StatusCode}]: {error}");
     }
 }
-public async Task UpdateConsumerLabelsAsync(string username, List<string> enabledServices, List<string> disabledServices)
+public async Task UpdateConsumerLabelsAsync(string username, List<string> enabledServices)
 {
-    var enabledStr  = enabledServices.Count  > 0 ? string.Join(",", enabledServices)  : "none";
-    var disabledStr = disabledServices.Count > 0 ? string.Join(",", disabledServices) : "none";
+    var enabledStr = string.Join(",", enabledServices);
 
-    // GET current consumer first to preserve existing fields
     var getResp = await _http.GetAsync($"{_adminUrl}/apisix/admin/consumers/{username}");
-    if (!getResp.IsSuccessStatusCode) return; // consumer may have been revoked, skip
+    if (!getResp.IsSuccessStatusCode) return;
 
-    var json    = await getResp.Content.ReadAsStringAsync();
+    var json = await getResp.Content.ReadAsStringAsync();
     using var doc = JsonDocument.Parse(json);
 
-    // Read existing desc and appKey so we don't lose them on patch
-    var desc   = doc.RootElement.TryGetProperty("value", out var val) &&
-                 val.TryGetProperty("desc", out var d) ? d.GetString() : "";
-    var appKey = doc.RootElement.TryGetProperty("value", out var val2) &&
-                 val2.TryGetProperty("plugins", out var pl) &&
-                 pl.TryGetProperty("basic-auth", out var ba) &&
-                 ba.TryGetProperty("username", out var u) ? u.GetString() : "";
+    var desc = doc.RootElement.GetProperty("value").GetProperty("desc").GetString();
 
-    var patchBody = $@"{{
+    var appKey = doc.RootElement.GetProperty("value")
+        .GetProperty("plugins")
+        .GetProperty("basic-auth")
+        .GetProperty("username")
+        .GetString();
+
+    var password = doc.RootElement.GetProperty("value")
+        .GetProperty("plugins")
+        .GetProperty("basic-auth")
+        .GetProperty("password")
+        .GetString();
+
+    var body = $@"{{
+        ""username"": ""{username}"",
+        ""desc"": ""{desc}"",
         ""labels"": {{
-            ""services_enabled"":  ""{enabledStr}"",
-            ""services_disabled"": ""{disabledStr}""
+            ""services_enabled"": ""{enabledStr}""
+        }},
+        ""plugins"": {{
+            ""basic-auth"": {{
+                ""username"": ""{appKey}"",
+                ""password"": ""{password}""
+            }}
         }}
     }}";
 
-    var content  = new StringContent(patchBody, Encoding.UTF8, "application/json");
-    var patchReq = new HttpRequestMessage(HttpMethod.Patch,
-        $"{_adminUrl}/apisix/admin/consumers/{username}") { Content = content };
+    var content = new StringContent(body, Encoding.UTF8, "application/json");
 
-    await _http.SendAsync(patchReq);
+    var response = await _http.PutAsync(
+        $"{_adminUrl}/apisix/admin/consumers/{username}", content);
+
+    if (!response.IsSuccessStatusCode)
+    {
+        var err = await response.Content.ReadAsStringAsync();
+        throw new Exception($"APISIX label update failed: {err}");
+    }
 }
         public async Task UpdateConsumerKeyAsync(string username, string newAppKey, string newAppSecret)
         {
@@ -135,19 +151,22 @@ public async Task UpdateConsumerLabelsAsync(string username, List<string> enable
     else
     {
         var whitelistJson = "[" + string.Join(",", whitelist.Select(x => $"\"{x}\"")) + "]";
-        patchBody = $@"{{
-            ""plugins"": {{
-                ""basic-auth"": {{}},
-                ""consumer-restriction"": {{
-                    ""whitelist"": {whitelistJson}
-                }}
-            }}
-        }}";
+
+patchBody = $@"{{
+    ""plugins"": {{
+        ""basic-auth"": {{}},
+        ""consumer-restriction"": {{
+            ""whitelist"": {whitelistJson}
+        }}
+    }}
+}}";
     }
 
     var patchContent = new StringContent(patchBody, Encoding.UTF8, "application/json");
     var patchReq = new HttpRequestMessage(HttpMethod.Patch,
-        $"{_adminUrl}/apisix/admin/routes/{routeId}") {{ Content = patchContent }};
+    $"{_adminUrl}/apisix/admin/routes/{routeId}");
+
+patchReq.Content = patchContent;
 
     var patchResp = await _http.SendAsync(patchReq);
     if (!patchResp.IsSuccessStatusCode)

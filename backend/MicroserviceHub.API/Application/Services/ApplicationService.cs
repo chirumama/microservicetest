@@ -159,21 +159,20 @@ namespace MicroserviceHub.API.Application.Services
             }
             // Step 3 — update consumer labels to reflect current service state
 // Get the final state of all microservices for this app
-var appDetails = await _repository.GetApplicationDetails(appId);
-
-var enabled  = appDetails.Microservices.Where(m => m.IsEnabled).Select(m => m.Name).ToList();
-var disabled = appDetails.Microservices.Where(m => !m.IsEnabled).Select(m => m.Name).ToList();
+var enabled = request.Microservices
+    .Where(m => m.IsEnabled)
+    .Select(m => allMicroservices.First(x => x.Id == m.Id).Name)
+    .ToList();
 
 foreach (var env in environments)
 {
     var consumerUsername = $"{appId}_{env.Replace("-", "_").Replace(" ", "_")}";
-    await _apisix.UpdateConsumerLabelsAsync(consumerUsername, enabled, disabled);
+    await _apisix.UpdateConsumerLabelsAsync(consumerUsername, enabled);
 
     Log.Information(
-        "Consumer labels updated: {Consumer}, enabled={Enabled}, disabled={Disabled}",
+        "Consumer labels updated: {Consumer}, enabled={Enabled}",
         consumerUsername,
-        string.Join(",", enabled),
-        string.Join(",", disabled));
+        string.Join(",", enabled));
 }
         }
 
@@ -213,17 +212,6 @@ foreach (var env in environments)
             return await _repository.GetMicroservicesAsync();
         }
         // In ApplicationService
-public async Task ResyncConsumerAsync(int appId, string environment)
-{
-    var keyInfo = await _repository.GetApiKeyByAppAndEnv(appId, environment);
 
-    var consumerUsername = $"{appId}_{environment.Replace("-", "_").Replace(" ", "_")}";
-
-    await _apisix.RegisterConsumerAsync(
-        consumerUsername,
-        keyInfo.AppKey,
-        keyInfo.AppSecret
-    );
-}
     }
 }
