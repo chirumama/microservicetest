@@ -28,7 +28,7 @@ kind: Service
 metadata:
   name: backend-service
 spec:
-  type: NodePort
+  type: NodePort   # 🔥 THIS WAS MISSING
   selector:
     app: backend
   ports:
