@@ -29,7 +29,7 @@ namespace MicroserviceHub.API.Application.Interfaces
         Task<ApiKeyInfoResponse> GetApiKeyById(int keyId);
         Task UpdateApiKeyAndSecret(int keyId, string newAppKey, string newAppSecret);
         Task BeginTransaction();
-        Task CommitTransaction();
+        Task CommitTransaction(); 
         Task RollbackTransaction();
     }
-} 
+}  
