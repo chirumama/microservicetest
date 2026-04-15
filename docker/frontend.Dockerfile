@@ -4,7 +4,7 @@ COPY frontend/package*.json ./
 RUN npm install
 COPY frontend/. ./
 
-ARG VITE_API_BASE_URL=http://192.168.17.129:30081/v1.0.1
+ARG VITE_API_BASE_URL=http://192.168.17.129:32417/api/v1.0.1
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 
 RUN npm run build
