@@ -1,7 +1,7 @@
 // In development, Vite proxies /v1.0.1/* -> http://localhost:5266
 // In production set VITE_API_BASE_URL env var
-const BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "http://192.168.17.129:32417/api/v1.0.1";
 
+const BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "http://192.168.17.129:32417/api/v1.0.1";
 function getToken(): string | null {
   return localStorage.getItem("token");
 }
