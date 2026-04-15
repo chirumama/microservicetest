@@ -13,7 +13,7 @@ obj/
 *.DotSettings.user
 appsettings.Development.json
 
-# ─── Node / Frontend ──────────────AAAAAA────sss─────gggg──v----------------------------
+# ─── Node / Frontend ──────────────AAAAAA────sssssss─────gggg──v----------------------------
 node_modules/
 dist/
 .vite/
