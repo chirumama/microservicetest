@@ -1,23 +1,30 @@
-// In development, Vite proxies /v1.0.1/* -> http://localhost:5266
-// In production set VITE_API_BASE_URL env var
 const BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "/v1.0.1";
 
-function getToken(): string | null {
-  return localStorage.getItem("token");
+// Read userId and roleId from localStorage (set on login, no JWT anywhere)
+function getUserId(): string | null {
+  return localStorage.getItem("userId");
+}
+
+function getRoleId(): string | null {
+  return localStorage.getItem("roleId");
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const token = getToken();
+  const userId = getUserId();
+  const roleId = getRoleId();
+
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...(options.headers as Record<string, string>),
   };
-  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  // Send userId and roleId as plain headers — no JWT, no Bearer token
+  if (userId) headers["X-User-Id"]   = userId;
+  if (roleId) headers["X-User-Role"] = roleId;
 
   const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
 
   if (!res.ok) {
-    // Try to parse a JSON error body, else use status text
     let msg = `HTTP ${res.status}`;
     try {
       const body = await res.json();
@@ -36,8 +43,10 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 // ─── Auth ─────────────────────────────────────────────────────────────────
 
 export interface LoginResponse {
-  token: string;
-  role: string;   // "User" | "Admin" | "SuperAdmin"
+  userId: number;
+  roleId: number;
+  role:   string;   // "User" | "Admin" | "SuperAdmin"
+  email:  string;
 }
 
 export async function login(email: string, password: string): Promise<LoginResponse> {
@@ -129,7 +138,6 @@ export async function updateApplicationSettings(
   });
 }
 
-// keyId is the ApiKeys.Id row returned in EnvironmentDto.id
 export async function regenerateSecret(appId: number, keyId: number): Promise<void> {
   return request<void>(`/Application/${appId}/keys/${keyId}/regenerate`, { method: "POST" });
 }
@@ -141,6 +149,7 @@ export async function revokeKey(appId: number, keyId: number): Promise<void> {
 export async function getMicroservices(): Promise<MicroserviceDto[]> {
   return request<MicroserviceDto[]>("/Application/microservices");
 }
+
 export interface UserSummary {
   id: number;
   email: string;

@@ -26,9 +26,10 @@ export default function Login() {
     setLoading(true);
     try {
       const result = await apiLogin(email, password);
-      login(result.token, result.role, email);
 
-      // Navigate based on the role string returned by the backend
+      // Pass userId, roleId, role, email — no token
+      login(result.userId, result.roleId, result.role, result.email);
+
       if (result.role === "SuperAdmin") {
         navigate("/superadmin-dashboard");
       } else {
@@ -61,7 +62,7 @@ export default function Login() {
             if (errors.email) setErrors((p) => ({ ...p, email: "" }));
           }}
           placeholder="Enter email..."
-          fullWidth required
+          fullWidth
           error={!!errors.email} helperText={errors.email}
           startIcon={<FaEnvelope style={{ color: "gray" }} />}
         />
@@ -76,7 +77,7 @@ export default function Login() {
             if (errors.password) setErrors((p) => ({ ...p, password: "" }));
           }}
           placeholder="Enter password..."
-          fullWidth required
+          fullWidth
           error={!!errors.password} helperText={errors.password}
           startIcon={<FaLock style={{ color: "gray" }} />}
           endIcon={

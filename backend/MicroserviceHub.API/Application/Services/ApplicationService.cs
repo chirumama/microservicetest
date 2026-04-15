@@ -157,6 +157,24 @@ namespace MicroserviceHub.API.Application.Services
                         routeId, consumerUsername, micro.IsEnabled);
                 }
             }
+            // Step 3 — update consumer labels to reflect current service state
+// Get the final state of all microservices for this app
+var appDetails = await _repository.GetApplicationDetails(appId);
+
+var enabled  = appDetails.Microservices.Where(m => m.IsEnabled).Select(m => m.Name).ToList();
+var disabled = appDetails.Microservices.Where(m => !m.IsEnabled).Select(m => m.Name).ToList();
+
+foreach (var env in environments)
+{
+    var consumerUsername = $"{appId}_{env.Replace("-", "_").Replace(" ", "_")}";
+    await _apisix.UpdateConsumerLabelsAsync(consumerUsername, enabled, disabled);
+
+    Log.Information(
+        "Consumer labels updated: {Consumer}, enabled={Enabled}, disabled={Disabled}",
+        consumerUsername,
+        string.Join(",", enabled),
+        string.Join(",", disabled));
+}
         }
 
       public async Task RegenerateSecretAsync(int keyId)
@@ -166,15 +184,19 @@ namespace MicroserviceHub.API.Application.Services
     var newKey    = "ak_" + Guid.NewGuid().ToString("N");
     var newSecret = "sk_" + Guid.NewGuid().ToString("N");
 
+    // Fetch first — need ApplicationId + Environment for consumer username
     var keyInfo = await _repository.GetApiKeyById(keyId);
     var consumerUsername = $"{keyInfo.ApplicationId}_{keyInfo.Environment.Replace("-", "_").Replace(" ", "_")}";
 
-    await _repository.UpdateApiSecret(keyId, newSecret);
+    // Update BOTH AppKey and AppSecret in SQL Server
+    await _repository.UpdateApiKeyAndSecret(keyId, newKey, newSecret);
+
+    // Update APISix consumer with both new values + updated desc
     await _apisix.UpdateConsumerKeyAsync(consumerUsername, newKey, newSecret);
 
-    Log.Information("Credentials regenerated for KeyId: {KeyId}", keyId);
+    Log.Information("Credentials regenerated for KeyId: {KeyId}, Consumer: {Consumer}", keyId, consumerUsername);
 }
-        public async Task RevokeKeyAsync(int keyId)
+         public async Task RevokeKeyAsync(int keyId)
         {
             Log.Warning("Revoking API Key: {KeyId}", keyId);
             var keyInfo = await _repository.GetApiKeyById(keyId);
@@ -190,5 +212,18 @@ namespace MicroserviceHub.API.Application.Services
         {
             return await _repository.GetMicroservicesAsync();
         }
+        // In ApplicationService
+public async Task ResyncConsumerAsync(int appId, string environment)
+{
+    var keyInfo = await _repository.GetApiKeyByAppAndEnv(appId, environment);
+
+    var consumerUsername = $"{appId}_{environment.Replace("-", "_").Replace(" ", "_")}";
+
+    await _apisix.RegisterConsumerAsync(
+        consumerUsername,
+        keyInfo.AppKey,
+        keyInfo.AppSecret
+    );
+}
     }
 }
