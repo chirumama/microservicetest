@@ -15,7 +15,7 @@ namespace MicroserviceHub.API.Infrastructure.ExternalServices
             _http.DefaultRequestHeaders.Add("X-API-KEY", config["Apisix:AdminKey"]!);
         }
 
-        // Registers consumer with basic-auth — validates BOTH AppKey and AppSecret
+        // Registers consumer with basic-auth — validates BOTH AppKey and AppSecretsssss
         public async Task RegisterConsumerAsync(string username, string appKey, string appSecret)
 {
     var body = $@"{{
