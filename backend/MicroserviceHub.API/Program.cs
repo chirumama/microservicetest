@@ -67,7 +67,7 @@ builder.Host.UseSerilog((context, services, configuration) =>
             )
         )
 
-        // application-.log — everything that is NOT request/response/errors
+        // application-log — everything that is NOT request/response/errors
         // i.e. your Log.Information(...) calls from services
         .WriteTo.Logger(lc => lc
             .Filter.ByIncludingOnly(e =>
