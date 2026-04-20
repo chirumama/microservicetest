@@ -106,7 +106,7 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-// ── APISix HttpClient ─────────────────────────────────────────────────────────
+// ── APISix HttpClientsss ─────────────────────────────────────────────────────────
 builder.Services.AddHttpClient<ApisixService>();
 builder.Services.AddScoped<ApisixService>();
 
