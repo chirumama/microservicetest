@@ -39,7 +39,12 @@ builder.Host.UseSerilog((context, services, configuration) =>
             .Filter.ByIncludingOnly(e => e.Level >= Serilog.Events.LogEventLevel.Error)
             .WriteTo.File(path: "logs/error-.log", rollingInterval: RollingInterval.Day,
                 retainedFileCountLimit: 30,
-                outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u3}] {Message:lj}{NewLine}{Exception}"))
+                outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u3}] {Message:lj}{NewLine}{Exception}"
+            )
+        )
+
+        // application-.log — everything that is NOT request/response/error
+        // i.e. your Log.Information(...) calls from services
         .WriteTo.Logger(lc => lc
             .Filter.ByIncludingOnly(e =>
                 !e.Properties.ContainsKey("LogType") &&
