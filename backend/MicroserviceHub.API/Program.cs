@@ -110,7 +110,7 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddHttpClient<ApisixService>();
 builder.Services.AddScoped<ApisixService>();
 
-// ── Services ─────────────────────────────────────────────────────────────ssss────
+// ── Services ────────────────────────────────────────────────────────────
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 builder.Services.AddScoped<IApplicationService, ApplicationService>();
