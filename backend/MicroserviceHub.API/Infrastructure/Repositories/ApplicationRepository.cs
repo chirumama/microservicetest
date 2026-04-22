@@ -155,6 +155,21 @@ public async Task UpdateApiKeyAndSecret(int keyId, string newAppKey, string newA
             });
         }
 
+
+        public async Task<ApiKeyFullRecord?> GetApiKeyByAppKey(string appKey)
+{
+    using var connection = new SqlConnection(_connectionString);
+
+    var query = @"
+        SELECT Id, ApplicationId, Environment, AppKey,
+               AppSecretHash, IsActive, IsEnvironmentEnabled
+        FROM   ApiKeys
+        WHERE  AppKey = @AppKey";
+
+    return await connection.QueryFirstOrDefaultAsync<ApiKeyFullRecord>(
+        query, new { AppKey = appKey });
+}
+
         public async Task UpsertMicroservice(int appId, int microserviceId, bool isEnabled)
         {
             using var connection = new SqlConnection(_connectionString);

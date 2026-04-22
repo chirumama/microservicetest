@@ -28,6 +28,8 @@ namespace MicroserviceHub.API.Application.Interfaces
         Task<IEnumerable<Microservice>> GetMicroservicesAsync();
         Task<ApiKeyInfoResponse> GetApiKeyById(int keyId);
         Task UpdateApiKeyAndSecret(int keyId, string newAppKey, string newAppSecret);
+
+        Task<ApiKeyFullRecord?> GetApiKeyByAppKey(string appKey);
         Task BeginTransaction();
         Task CommitTransaction(); 
         Task RollbackTransaction();

@@ -1,6 +1,8 @@
 ﻿using MicroserviceHub.API.Application.DTOs.Request;
 using MicroserviceHub.API.Application.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace MicroserviceHub.API.Controllers
 {
@@ -15,11 +17,7 @@ namespace MicroserviceHub.API.Controllers
             _authService = authService;
         }
 
-        /// <summary>
-        /// POST /v1.0.1/auth/login
-        /// Returns UserId, RoleId, Role, Email.
-        /// Client sends X-User-Id and X-User-Role headers on every subsequent request.
-        /// </summary>
+        // Public — no auth needed
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginRequest request)
         {
@@ -27,10 +25,8 @@ namespace MicroserviceHub.API.Controllers
             return Ok(result);
         }
 
-        /// <summary>
-        /// POST /v1.0.1/auth/create-user
-        /// SuperAdmin only (X-User-Role: 3)
-        /// </summary>
+        // SuperAdmin only
+        [Authorize]
         [HttpPost("create-user")]
         public async Task<IActionResult> CreateUser(CreateUserRequest request)
         {
@@ -41,10 +37,7 @@ namespace MicroserviceHub.API.Controllers
             return Ok(new { message = "User created successfully" });
         }
 
-        /// <summary>
-        /// GET /v1.0.1/auth/users
-        /// SuperAdmin only (X-User-Role: 3)
-        /// </summary>
+        [Authorize]
         [HttpGet("users")]
         public async Task<IActionResult> GetUsers()
         {
@@ -55,11 +48,10 @@ namespace MicroserviceHub.API.Controllers
             return Ok(result);
         }
 
-        // ── helper ────────────────────────────────────────────────────────────
         private int GetRoleId()
         {
-            var header = Request.Headers["X-User-Role"].FirstOrDefault();
-            return int.TryParse(header, out var id) ? id : 0;
+            var claim = User.FindFirst("roleId")?.Value;
+            return int.TryParse(claim, out var id) ? id : 0;
         }
     }
 }

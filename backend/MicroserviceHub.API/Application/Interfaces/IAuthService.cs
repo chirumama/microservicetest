@@ -5,7 +5,7 @@ namespace MicroserviceHub.API.Application.Interfaces
 {
     public interface IAuthService
     {
-        Task<LoginResponse> LoginAsync(LoginRequest Request);
+        Task<LoginResponse> LoginAsync(LoginRequest request);
         Task CreateUserAsync(CreateUserRequest request);
         Task<List<UserSummaryResponse>> GetUsersAsync();
     }

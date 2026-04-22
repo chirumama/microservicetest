@@ -1,17 +1,11 @@
-const BASE_URL = "http://192.168.17.129:30081/v1.0.1";
+// const BASE_URL = "http://192.168.17.129:30081/v1.0.1";
+
+const BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "/v1.0.1";
 
 // Read userId and roleId from localStorage (set on login, no JWT anywhere)
-function getUserId(): string | null {
-  return localStorage.getItem("userId");
-}
 
-function getRoleId(): string | null {
-  return localStorage.getItem("roleId");
-}
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const userId = getUserId();
-  const roleId = getRoleId();
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -19,8 +13,11 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   };
 
   // Send userId and roleId as plain headers — no JWT, no Bearer token
-  if (userId) headers["X-User-Id"]   = userId;
-  if (roleId) headers["X-User-Role"] = roleId;
+  const token = localStorage.getItem("token");
+
+if (token) {
+  headers["Authorization"] = `Bearer ${token}`;
+}
 
   const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
 
@@ -43,10 +40,10 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 // ─── Auth ─────────────────────────────────────────────────────────────────
 
 export interface LoginResponse {
-  userId: number;
-  roleId: number;
-  role:   string;   // "User" | "Admin" | "SuperAdmin"
-  email:  string;
+  accessToken: string;
+  role: string;
+  email: string;
+  expiresIn: number;
 }
 
 export async function login(email: string, password: string): Promise<LoginResponse> {

@@ -3,13 +3,17 @@ using MicroserviceHub.API.Application.Services;
 using MicroserviceHub.API.Infrastructure.Repositories;
 using MicroserviceHub.API.Infrastructure.ExternalServices;
 using MicroserviceHub.API.Middleware;
+using MicroserviceHub.API.Utilities;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
 
 Console.WriteLine("APP STARTING...");
 var builder = WebApplication.CreateBuilder(args);
 
+// ── Serilog ───────────────────────────────────────────────────────────────────
 builder.Host.UseSerilog((context, services, configuration) =>
 {
     configuration
@@ -18,43 +22,23 @@ builder.Host.UseSerilog((context, services, configuration) =>
         .Enrich.WithThreadId()
         .MinimumLevel.Information()
         .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
-        .MinimumLevel.Override("System", Serilog.Events.LogEventLevel.Warning)
-        .WriteTo.Console(
-            outputTemplate: "{Timestamp:HH:mm:ss} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
+        .MinimumLevel.Override("System",    Serilog.Events.LogEventLevel.Warning)
+        .WriteTo.Console(outputTemplate: "{Timestamp:HH:mm:ss} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
         .WriteTo.Logger(lc => lc
-            .Filter.ByIncludingOnly(e =>
-                e.Properties.ContainsKey("LogType") &&
-                e.Properties["LogType"].ToString() == "\"Request\"")
-            .WriteTo.File(path: "logs/request-.log", rollingInterval: RollingInterval.Day,
-                retainedFileCountLimit: 30,
-                outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u3}] {Message:lj}{NewLine}{Exception}"))
+            .Filter.ByIncludingOnly(e => e.Properties.ContainsKey("LogType") && e.Properties["LogType"].ToString() == "\"Request\"")
+            .WriteTo.File("logs/request-.log", rollingInterval: RollingInterval.Day, retainedFileCountLimit: 30))
         .WriteTo.Logger(lc => lc
-            .Filter.ByIncludingOnly(e =>
-                e.Properties.ContainsKey("LogType") &&
-                e.Properties["LogType"].ToString() == "\"Response\"")
-            .WriteTo.File(path: "logs/response-.log", rollingInterval: RollingInterval.Day,
-                retainedFileCountLimit: 30,
-                outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u3}] {Message:lj}{NewLine}{Exception}"))
+            .Filter.ByIncludingOnly(e => e.Properties.ContainsKey("LogType") && e.Properties["LogType"].ToString() == "\"Response\"")
+            .WriteTo.File("logs/response-.log", rollingInterval: RollingInterval.Day, retainedFileCountLimit: 30))
         .WriteTo.Logger(lc => lc
             .Filter.ByIncludingOnly(e => e.Level >= Serilog.Events.LogEventLevel.Error)
-            .WriteTo.File(path: "logs/error-.log", rollingInterval: RollingInterval.Day,
-                retainedFileCountLimit: 30,
-                outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u3}] {Message:lj}{NewLine}{Exception}"
-            )
-        )
-
-        // application-.log — everything that is NOT request/response/error
-        // i.e. your Log.Information(...) calls from services
+            .WriteTo.File("logs/error-.log", rollingInterval: RollingInterval.Day, retainedFileCountLimit: 30))
         .WriteTo.Logger(lc => lc
-            .Filter.ByIncludingOnly(e =>
-                !e.Properties.ContainsKey("LogType") &&
-                e.Level < Serilog.Events.LogEventLevel.Error)
-            .WriteTo.File(path: "logs/application-.log", rollingInterval: RollingInterval.Day,
-                retainedFileCountLimit: 30,
-                outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u3}] {Message:lj}{NewLine}{Exception}"));
+            .Filter.ByIncludingOnly(e => !e.Properties.ContainsKey("LogType") && e.Level < Serilog.Events.LogEventLevel.Error)
+            .WriteTo.File("logs/application-.log", rollingInterval: RollingInterval.Day, retainedFileCountLimit: 30));
 });
 
-// ── CORS ─────────────────────────────────────────────────────────────────────
+// ── CORS ──────────────────────────────────────────────────────────────────────
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
@@ -64,57 +48,77 @@ builder.Services.AddCors(options =>
                 "http://localhost:5173",
                 "http://localhost:4173",
                 "http://192.168.17.129:30080",
-                "http://192.168.17.129:32417"
-            )
+                "http://192.168.17.129:32417")
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
     });
 });
 
+// ── RSA key provider (singleton — loaded once at startup) ─────────────────────
+builder.Services.AddSingleton<RsaKeyProvider>();
+builder.Services.AddSingleton<OAuthTokenService>();
+
+var rsaProvider = new RsaKeyProvider(builder.Configuration);
+
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = builder.Configuration["OAuth:Issuer"],
+
+            ValidateAudience = true,
+            ValidAudience = builder.Configuration["OAuth:DashboardAudience"],
+
+            ValidateLifetime = true,
+
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = rsaProvider.GetPrivateKey(),
+
+            ClockSkew = TimeSpan.Zero
+        };
+    });
+
+builder.Services.AddAuthorization();
+// ── APISix ────────────────────────────────────────────────────────────────────
+builder.Services.AddHttpClient<ApisixService>();
+builder.Services.AddScoped<ApisixService>();
+
+// ── Application services ──────────────────────────────────────────────────────
+builder.Services.AddScoped<IAuthService,        AuthService>();
+builder.Services.AddScoped<IAuthRepository,     AuthRepository>();
+builder.Services.AddScoped<IApplicationService, ApplicationService>();
+builder.Services.AddScoped<IApplicationRepository, ApplicationRepository>();
+builder.Services.AddScoped<IOAuthService,       OAuthService>();
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo { Title = "MicroserviceHub.API", Version = "v1" });
-
-    // Swagger now uses X-User-Id + X-User-Role instead of Bearer token
-    options.AddSecurityDefinition("X-User-Id", new OpenApiSecurityScheme
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Name = "X-User-Id",
-        Type = SecuritySchemeType.ApiKey,
-        In   = ParameterLocation.Header,
-        Description = "User ID returned from login"
-    });
-    options.AddSecurityDefinition("X-User-Role", new OpenApiSecurityScheme
-    {
-        Name = "X-User-Role",
-        Type = SecuritySchemeType.ApiKey,
-        In   = ParameterLocation.Header,
-        Description = "Role ID returned from login (1=User, 2=Admin, 3=SuperAdmin)"
+        Name        = "Authorization",
+        Type        = SecuritySchemeType.Http,
+        Scheme      = "Bearer",
+        BearerFormat = "JWT",
+        In          = ParameterLocation.Header,
+        Description = "Enter the dashboard JWT token from POST /auth/login"
     });
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
-            new OpenApiSecurityScheme { Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "X-User-Id" } },
-            new string[] {}
-        },
-        {
-            new OpenApiSecurityScheme { Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "X-User-Role" } },
-            new string[] {}
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+            },
+            Array.Empty<string>()
         }
     });
 });
-
-// ── APISix HttpClientsss ─────────────────────────────────────────────────────────
-builder.Services.AddHttpClient<ApisixService>();
-builder.Services.AddScoped<ApisixService>();
-
-// ── Services ────────────────────────────────────────────────────────sssssss────
-builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<IAuthRepository, AuthRepository>();
-builder.Services.AddScoped<IApplicationService, ApplicationService>();
-builder.Services.AddScoped<IApplicationRepository, ApplicationRepository>();
 
 var app = builder.Build();
 
@@ -126,10 +130,11 @@ if (app.Environment.IsDevelopment())
 
 app.UseMiddleware<RequestResponseLoggingMiddleware>();
 app.UseCors("AllowFrontend");
+app.UseAuthentication();
+app.UseAuthorization();
 
 Console.WriteLine("APP RUNNING...");
 
-// ── Global exception handler ──────────────────────────────────────────────────
 app.UseExceptionHandler(errorApp =>
 {
     errorApp.Run(async context =>
@@ -140,6 +145,7 @@ app.UseExceptionHandler(errorApp =>
         var statusCode = error?.Error switch
         {
             UnauthorizedAccessException => 401,
+            InvalidOperationException   => 400,
             KeyNotFoundException        => 404,
             _                           => 500
         };
@@ -151,6 +157,5 @@ app.UseExceptionHandler(errorApp =>
     });
 });
 
-app.UseHttpsRedirection();
 app.MapControllers();
 app.Run();

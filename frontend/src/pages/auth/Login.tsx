@@ -27,8 +27,12 @@ export default function Login() {
     try {
       const result = await apiLogin(email, password);
 
-      // Pass userId, roleId, role, email — no token
-      login(result.userId, result.roleId, result.role, result.email);
+      
+      // ✅ Store JWT
+localStorage.setItem("token", result.accessToken);
+
+// ✅ Update auth context (no userId/roleId needed)
+login(0, 0, result.role, result.email);
 
       if (result.role === "SuperAdmin") {
         navigate("/superadmin-dashboard");
