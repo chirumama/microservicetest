@@ -1,9 +1,5 @@
-﻿
-
-using MicroserviceHub.API.Application.DTOs.Response;
+﻿using MicroserviceHub.API.Application.DTOs.Response;
 using MicroserviceHub.API.Domain.Entities;
-using MicroserviceHub.API.Infrastructure.ExternalServices;
-
 
 namespace MicroserviceHub.API.Application.Interfaces
 {
@@ -31,7 +27,7 @@ namespace MicroserviceHub.API.Application.Interfaces
 
         Task<ApiKeyFullRecord?> GetApiKeyByAppKey(string appKey);
         Task BeginTransaction();
-        Task CommitTransaction(); 
+        Task CommitTransaction();
         Task RollbackTransaction();
     }
-}  
+}

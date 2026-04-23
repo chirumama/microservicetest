@@ -19,11 +19,7 @@ namespace MicroserviceHub.API.Controllers
             _keys         = keys;
         }
 
-        /// <summary>
-        /// POST /v1.0.1/oauth/token
-        /// Developer's app sends AppKey + AppSecret, gets back a JWT access token.
-        /// APISix validates this token on every microservice call.
-        /// </summary>
+        // Developer's app → POST with AppKey+AppSecret → gets JWT access token
         [HttpPost("token")]
         public async Task<IActionResult> Token([FromBody] ClientCredentialsRequest request)
         {
@@ -31,16 +27,19 @@ namespace MicroserviceHub.API.Controllers
             return Ok(result);
         }
 
-        /// <summary>
-        /// GET /v1.0.1/oauth/.well-known/jwks.json
-        /// APISix fetches this to get Hub's public key for token verification.
-        /// This endpoint is public — no auth required.
-        /// </summary>
+        // APISix fetches this to get the public key for token verification
         [HttpGet(".well-known/jwks.json")]
         public IActionResult Jwks()
         {
             var jwk = _keys.GetPublicJwk();
             return Ok(new JsonWebKeySet { Keys = { jwk } });
+        }
+
+        // Helper — get public key as PEM for pasting into APISix consumer config
+        [HttpGet(".well-known/public-key.pem")]
+        public IActionResult PublicKeyPem()
+        {
+            return Content(_keys.GetPemPublicKey(), "text/plain");
         }
     }
 }

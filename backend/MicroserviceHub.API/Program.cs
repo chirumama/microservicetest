@@ -13,7 +13,6 @@ using Serilog;
 Console.WriteLine("APP STARTING...");
 var builder = WebApplication.CreateBuilder(args);
 
-// ── Serilog ───────────────────────────────────────────────────────────────────
 builder.Host.UseSerilog((context, services, configuration) =>
 {
     configuration
@@ -38,7 +37,6 @@ builder.Host.UseSerilog((context, services, configuration) =>
             .WriteTo.File("logs/application-.log", rollingInterval: RollingInterval.Day, retainedFileCountLimit: 30));
 });
 
-// ── CORS ──────────────────────────────────────────────────────────────────────
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
@@ -55,44 +53,54 @@ builder.Services.AddCors(options =>
     });
 });
 
-// ── RSA key provider (singleton — loaded once at startup) ─────────────────────
+// Register singletons FIRST so we can resolve for JWT config
 builder.Services.AddSingleton<RsaKeyProvider>();
 builder.Services.AddSingleton<OAuthTokenService>();
 
-var rsaProvider = new RsaKeyProvider(builder.Configuration);
-
-builder.Services
-    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+// Build a temp provider to get the public key for JWT validation setup
+// This is the correct pattern — resolves from the same DI container
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        // Resolve from the container — same singleton the rest of the app uses
+        var sp         = builder.Services.BuildServiceProvider();
+        var keys       = sp.GetRequiredService<RsaKeyProvider>();
+        var config     = builder.Configuration;
+
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidateIssuer = true,
-            ValidIssuer = builder.Configuration["OAuth:Issuer"],
-
-            ValidateAudience = true,
-            ValidAudience = builder.Configuration["OAuth:DashboardAudience"],
-
-            ValidateLifetime = true,
-
+            ValidateIssuer           = true,
+            ValidIssuer              = config["OAuth:Issuer"],
+            ValidateAudience         = true,
+            ValidAudience            = config["OAuth:DashboardAudience"],
+            ValidateLifetime         = true,
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey = rsaProvider.GetPrivateKey(),
+            IssuerSigningKey         = keys.GetPublicKey(),  // public key only
+            ClockSkew                = TimeSpan.Zero
+        };
 
-            ClockSkew = TimeSpan.Zero
+        options.Events = new JwtBearerEvents
+        {
+            OnChallenge = async ctx =>
+            {
+                ctx.HandleResponse();
+                ctx.Response.StatusCode  = 401;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.WriteAsync("{\"error\":\"Unauthorized — valid dashboard token required\"}");
+            }
         };
     });
 
 builder.Services.AddAuthorization();
-// ── APISix ────────────────────────────────────────────────────────────────────
+
 builder.Services.AddHttpClient<ApisixService>();
 builder.Services.AddScoped<ApisixService>();
 
-// ── Application services ──────────────────────────────────────────────────────
-builder.Services.AddScoped<IAuthService,        AuthService>();
-builder.Services.AddScoped<IAuthRepository,     AuthRepository>();
-builder.Services.AddScoped<IApplicationService, ApplicationService>();
+builder.Services.AddScoped<IAuthService,           AuthService>();
+builder.Services.AddScoped<IAuthRepository,        AuthRepository>();
+builder.Services.AddScoped<IApplicationService,    ApplicationService>();
 builder.Services.AddScoped<IApplicationRepository, ApplicationRepository>();
-builder.Services.AddScoped<IOAuthService,       OAuthService>();
+builder.Services.AddScoped<IOAuthService,          OAuthService>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -101,12 +109,12 @@ builder.Services.AddSwaggerGen(options =>
     options.SwaggerDoc("v1", new OpenApiInfo { Title = "MicroserviceHub.API", Version = "v1" });
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Name        = "Authorization",
-        Type        = SecuritySchemeType.Http,
-        Scheme      = "Bearer",
+        Name         = "Authorization",
+        Type         = SecuritySchemeType.Http,
+        Scheme       = "Bearer",
         BearerFormat = "JWT",
-        In          = ParameterLocation.Header,
-        Description = "Enter the dashboard JWT token from POST /auth/login"
+        In           = ParameterLocation.Header,
+        Description  = "Paste the access_token from POST /v1.0.1/auth/login"
     });
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
