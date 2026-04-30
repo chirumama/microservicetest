@@ -6,18 +6,14 @@ const BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "/
 
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const token = localStorage.getItem("accessToken");
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...(options.headers as Record<string, string>),
   };
 
-  // Send userId and roleId as plain headers — no JWT, no Bearer token
-  const token = localStorage.getItem("token");
-
-if (token) {
-  headers["Authorization"] = `Bearer ${token}`;
-}
+  if (token) headers["Authorization"] = `Bearer ${token}`;
 
   const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
 
@@ -41,9 +37,10 @@ if (token) {
 
 export interface LoginResponse {
   accessToken: string;
-  role: string;
-  email: string;
-  expiresIn: number;
+  tokenType:   string;
+  expiresIn:   number;
+  role:        string;
+  email:       string;
 }
 
 export async function login(email: string, password: string): Promise<LoginResponse> {

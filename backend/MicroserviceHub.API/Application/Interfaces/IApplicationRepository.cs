@@ -29,5 +29,11 @@ namespace MicroserviceHub.API.Application.Interfaces
         Task BeginTransaction();
         Task CommitTransaction();
         Task RollbackTransaction();
+        Task<string> GetConsumerKeyByAppKey(string appKey);
+
+        Task SaveAccessToken(int keyId, string accessToken);
+Task<string?> GetAccessToken(int keyId);
+Task UpdateConsumerKey(int keyId, string newConsumerKey);
+
     }
 }

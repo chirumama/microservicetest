@@ -11,11 +11,15 @@ namespace MicroserviceHub.API.Controllers
     [Route("v1.0.1/Application")]
     public class ApplicationController : ControllerBase
     {
-        private readonly IApplicationService _service;
+        private readonly IApplicationService    _service;
+        private readonly IApplicationRepository _repository;
 
-        public ApplicationController(IApplicationService service)
+        public ApplicationController(
+            IApplicationService    service,
+            IApplicationRepository repository)
         {
-            _service = service;
+            _service    = service;
+            _repository = repository;
         }
 
         [HttpPost]
@@ -62,6 +66,15 @@ namespace MicroserviceHub.API.Controllers
             if (GetRoleId() != 2) return Forbid();
             await _service.RevokeKeyAsync(keyId);
             return Ok(new { message = "Access revoked successfully" });
+        }
+
+        [HttpGet("{appId}/keys/{keyId}/token")]
+        public async Task<IActionResult> GetAccessToken(int appId, int keyId)
+        {
+            var token = await _repository.GetAccessToken(keyId);
+            if (token == null)
+                return NotFound(new { error = "No token found. Create the app or contact admin." });
+            return Ok(new { accessToken = token, tokenType = "Bearer", expiresIn = 0 });
         }
 
         [HttpGet("microservices")]

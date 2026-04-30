@@ -1,7 +1,10 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using MicroserviceHub.API.Application.DTOs.Request;
 using MicroserviceHub.API.Application.DTOs.Response;
 using MicroserviceHub.API.Application.Interfaces;
 using MicroserviceHub.API.Utilities;
+using Microsoft.IdentityModel.Tokens;
 using Serilog;
 
 namespace MicroserviceHub.API.Application.Services
@@ -31,7 +34,6 @@ namespace MicroserviceHub.API.Application.Services
                 string.IsNullOrWhiteSpace(request.ClientSecret))
                 throw new UnauthorizedAccessException("client_id and client_secret are required.");
 
-            // Look up the AppKey in the database
             var keyRecord = await _repository.GetApiKeyByAppKey(request.ClientId);
 
             if (keyRecord == null)
@@ -40,49 +42,67 @@ namespace MicroserviceHub.API.Application.Services
                 throw new UnauthorizedAccessException("Invalid client credentials.");
             }
 
-            // Verify the AppSecret matches
             if (keyRecord.AppSecretHash != request.ClientSecret)
             {
-                Log.Warning("OAuth token request — AppSecret mismatch for AppKey: {ClientId}", request.ClientId);
+                Log.Warning("OAuth token request — AppSecret mismatch: {ClientId}", request.ClientId);
                 throw new UnauthorizedAccessException("Invalid client credentials.");
             }
 
-            // Check the key is still active
             if (!keyRecord.IsActive || !keyRecord.IsEnvironmentEnabled)
             {
-                Log.Warning("OAuth token request — key is revoked or disabled: {ClientId}", request.ClientId);
+                Log.Warning("OAuth token request — key revoked or disabled: {ClientId}", request.ClientId);
                 throw new UnauthorizedAccessException("This key has been revoked or disabled.");
             }
 
-            // Fetch enabled microservices for this application
-            var details = await _repository.GetApplicationDetails(keyRecord.ApplicationId);
-            var enabledServices = details.Microservices
-                .Where(m => m.IsEnabled)
-                .Select(m => m.Name)
-                .ToList();
+            // Return the stored permanent token
+            var storedToken = await _repository.GetAccessToken(keyRecord.Id);
 
-            var environment      = keyRecord.Environment;
-            var consumerUsername = $"{keyRecord.ApplicationId}_{environment.Replace("-", "_").Replace(" ", "_")}";
+            if (storedToken == null)
+            {
+                // Fallback: generate and store if missing (older records before this feature)
+                Log.Warning("No stored token found for KeyId {Id} — generating fallback", keyRecord.Id);
 
-            var token = _tokenService.GenerateApiToken(
-                appId:           keyRecord.ApplicationId,
-                environment:     environment,
-                consumerUsername: consumerUsername,
-                enabledServices: enabledServices);
+                var details = await _repository.GetApplicationDetails(keyRecord.ApplicationId);
+                var enabledServices = details.Microservices
+                    .Where(m => m.IsEnabled)
+                    .Select(m => m.Name)
+                    .ToList();
 
-            var expiryMinutes = _config.GetValue<int>("OAuth:ApiTokenExpiryMinutes", 60);
+                var consumerUsername = $"{keyRecord.ApplicationId}_{keyRecord.Environment.Replace("-", "_").Replace(" ", "_")}";
 
-            Log.Information(
-                "API token issued for AppId: {AppId}, Env: {Env}, Services: {Services}",
-                keyRecord.ApplicationId, environment, string.Join(",", enabledServices));
+                storedToken = _tokenService.GeneratePermanentApiToken(
+                    keyRecord.ApplicationId,
+                    keyRecord.Environment,
+                    consumerUsername,
+                    enabledServices);
+
+                await _repository.SaveAccessToken(keyRecord.Id, storedToken);
+            }
+
+            var scope = GetServicesFromToken(storedToken);
+
+            Log.Information("Permanent token returned for AppId: {Id}, Env: {Env}",
+                keyRecord.ApplicationId, keyRecord.Environment);
 
             return new TokenResponse
             {
-                AccessToken = token,
+                AccessToken = storedToken,
                 TokenType   = "Bearer",
-                ExpiresIn   = expiryMinutes * 60,
-                Scope       = string.Join(" ", enabledServices)
+                ExpiresIn   = 0,
+                Scope       = string.Join(" ", scope)
             };
+        }
+
+        private static List<string> GetServicesFromToken(string token)
+        {
+            try
+            {
+                var handler = new JwtSecurityTokenHandler();
+                var jwt     = handler.ReadJwtToken(token);
+                var services = jwt.Claims.FirstOrDefault(c => c.Type == "services")?.Value ?? "";
+                return services.Split(',').Where(s => !string.IsNullOrEmpty(s)).ToList();
+            }
+            catch { return new List<string>(); }
         }
     }
 }

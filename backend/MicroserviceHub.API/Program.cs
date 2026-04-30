@@ -9,6 +9,8 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 Console.WriteLine("APP STARTING...");
 var builder = WebApplication.CreateBuilder(args);
@@ -57,27 +59,23 @@ builder.Services.AddCors(options =>
 builder.Services.AddSingleton<RsaKeyProvider>();
 builder.Services.AddSingleton<OAuthTokenService>();
 
-// Build a temp provider to get the public key for JWT validation setup
-// This is the correct pattern — resolves from the same DI container
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        // Resolve from the container — same singleton the rest of the app uses
-        var sp         = builder.Services.BuildServiceProvider();
-        var keys       = sp.GetRequiredService<RsaKeyProvider>();
-        var config     = builder.Configuration;
+    .AddJwtBearer();
 
+builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
+    .Configure<RsaKeyProvider>((options, keys) =>
+    {
         options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer           = true,
-            ValidIssuer              = config["OAuth:Issuer"],
-            ValidateAudience         = true,
-            ValidAudience            = config["OAuth:DashboardAudience"],
-            ValidateLifetime         = true,
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey         = keys.GetPublicKey(),  // public key only
-            ClockSkew                = TimeSpan.Zero
-        };
+{
+    ValidateIssuer           = true,
+    ValidIssuer              = builder.Configuration["OAuth:Issuer"],
+    ValidateAudience         = true,
+    ValidAudience            = builder.Configuration["OAuth:DashboardAudience"],
+    ValidateLifetime         = false,   // ← allow tokens without expiry for dashboard tokens too
+    ValidateIssuerSigningKey = true,
+    IssuerSigningKey         = keys.GetPublicKey(),
+    ClockSkew                = TimeSpan.Zero
+};
 
         options.Events = new JwtBearerEvents
         {
@@ -127,8 +125,20 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 });
+builder.Services.AddHealthChecks()
+    .AddCheck("postgres", () =>
+    {
+        var conn = builder.Configuration.GetConnectionString("DefaultConnection");
+
+        if (string.IsNullOrEmpty(conn))
+            return HealthCheckResult.Unhealthy("Connection string missing");
+
+        return HealthCheckResult.Healthy();
+    })
+    .AddCheck("self", () => HealthCheckResult.Healthy());
 
 var app = builder.Build();
+
 
 if (app.Environment.IsDevelopment())
 {
@@ -164,6 +174,7 @@ app.UseExceptionHandler(errorApp =>
         await context.Response.WriteAsync($"{{\"error\":\"{message}\"}}");
     });
 });
+app.MapHealthChecks("/health/live",     new HealthCheckOptions { Predicate = c => c.Name == "self" }); app.MapHealthChecks("/health/ready",     new HealthCheckOptions { Predicate = _ => true });
 
 app.MapControllers();
 app.Run();

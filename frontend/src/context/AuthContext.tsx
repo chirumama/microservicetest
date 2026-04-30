@@ -3,15 +3,13 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from "
 export type Role = "SuperAdmin" | "Admin" | "User";
 
 export type UserType = {
-  userId: number;
-  roleId: number;
-  email:  string;
-  role:   Role;
+  role:  Role;
+  email: string;
 };
 
 type AuthContextType = {
   user:      UserType | null;
-  login:     (userId: number, roleId: number, role: string, email: string) => void;
+  login:     (accessToken: string, role: string, email: string) => void;
   logout:    () => void;
   isLoading: boolean;
 };
@@ -27,43 +25,29 @@ function parseRole(role: string): Role {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser]         = useState<UserType | null>(null);
+  const [user, setUser]           = useState<UserType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Restore session from localStorage on page refresh
-    const userId = localStorage.getItem("userId");
-    const roleId = localStorage.getItem("roleId");
-    const role   = localStorage.getItem("role");
-    const email  = localStorage.getItem("email");
+    const token = localStorage.getItem("accessToken");
+    const role  = localStorage.getItem("role");
+    const email = localStorage.getItem("email");
 
-    if (userId && roleId && role && email) {
-      setUser({
-        userId: parseInt(userId),
-        roleId: parseInt(roleId),
-        role:   parseRole(role),
-        email,
-      });
+    if (token && role && email) {
+      setUser({ role: parseRole(role), email });
     }
     setIsLoading(false);
   }, []);
 
-  const login = (userId: number, roleId: number, role: string, email: string): void => {
-    const parsedRole = parseRole(role);
-
-    // Store userId and roleId — these are sent as X-User-Id and X-User-Role headers
-    // No JWT token stored anywhere
-    localStorage.setItem("userId", String(userId));
-    localStorage.setItem("roleId", String(roleId));
-    localStorage.setItem("role",   parsedRole);
-    localStorage.setItem("email",  email);
-
-    setUser({ userId, roleId, role: parsedRole, email });
+  const login = (accessToken: string, role: string, email: string): void => {
+    localStorage.setItem("accessToken", accessToken);
+    localStorage.setItem("role",        role);
+    localStorage.setItem("email",       email);
+    setUser({ role: parseRole(role), email });
   };
 
   const logout = (): void => {
-    localStorage.removeItem("userId");
-    localStorage.removeItem("roleId");
+    localStorage.removeItem("accessToken");
     localStorage.removeItem("role");
     localStorage.removeItem("email");
     setUser(null);

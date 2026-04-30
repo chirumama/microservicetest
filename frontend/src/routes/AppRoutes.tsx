@@ -14,7 +14,7 @@ function ProtectedRoute({ children, allowedRoles }: { children: React.ReactEleme
   if (!user) return <Navigate to="/" replace />;
   if (allowedRoles && !allowedRoles.includes(user.role)) return <Navigate to="/dashboard" replace />;
   return children;
-}
+} 
 
 export default function AppRoutes(){
   return (

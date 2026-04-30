@@ -27,18 +27,14 @@ export default function Login() {
     try {
       const result = await apiLogin(email, password);
 
-      
-      // ✅ Store JWT
-localStorage.setItem("token", result.accessToken);
+// Pass accessToken, role, email — no userId or roleId needed
+login(result.accessToken, result.role, result.email);
 
-// ✅ Update auth context (no userId/roleId needed)
-login(0, 0, result.role, result.email);
-
-      if (result.role === "SuperAdmin") {
-        navigate("/superadmin-dashboard");
-      } else {
-        navigate("/dashboard");
-      }
+if (result.role === "SuperAdmin") {
+  navigate("/superadmin-dashboard");
+} else {
+  navigate("/dashboard");
+}
     } catch (err: unknown) {
       setErrors({ api: err instanceof Error ? err.message : "Login failed" });
     } finally {

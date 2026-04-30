@@ -57,22 +57,28 @@ public async Task UpdateApiKeyAndSecret(int keyId, string newAppKey, string newA
     });
 }
         public async Task CreateApiKey(int appId, string environment, string apiKey, string apiSecret)
-        {
-            using var connection = new SqlConnection(_connectionString);
+{
+    using var connection = new SqlConnection(_connectionString);
 
-            // Column name in DB is AppKey / AppSecretHash (matches the schema you provided)
-            var query = @"
-        INSERT INTO ApiKeys (ApplicationId, Environment, AppKey, AppSecretHash, IsActive, IsEnvironmentEnabled, CreatedAt)
-        VALUES (@ApplicationId, @Environment, @ApiKey, @ApiSecretHash, 1, 1, GETUTCDATE())";
+    var consumerKey = $"{appId}_{environment.Replace("-", "_").Replace(" ", "_")}";
 
-            await connection.ExecuteAsync(query, new
-            {
-                ApplicationId = appId,
-                Environment   = environment,
-                ApiKey        = apiKey,
-                ApiSecretHash = apiSecret
-            });
-        }
+    var query = @"
+        INSERT INTO ApiKeys 
+            (ApplicationId, Environment, AppKey, AppSecretHash, 
+             ConsumerKey, IsActive, IsEnvironmentEnabled, CreatedAt)
+        VALUES 
+            (@ApplicationId, @Environment, @ApiKey, @ApiSecretHash,
+             @ConsumerKey, 1, 1, GETUTCDATE())";
+
+    await connection.ExecuteAsync(query, new
+    {
+        ApplicationId = appId,
+        Environment   = environment,
+        ApiKey        = apiKey,
+        ApiSecretHash = apiSecret,
+        ConsumerKey   = consumerKey
+    });
+}
 
         public async Task<List<GetApplicationResponse>> GetApplicationsByUser(int userId)
         {
@@ -261,9 +267,13 @@ public async Task UpdateApiKeyAndSecret(int keyId, string newAppKey, string newA
     using var connection = new SqlConnection(_connectionString);
 
     var query = @"
-        SELECT Id, ApplicationId, Environment, AppKey
-        FROM ApiKeys
-        WHERE Id = @Id";
+        SELECT Id, ApplicationId, Environment, AppKey,
+               ISNULL(ConsumerKey, 
+                   CAST(ApplicationId AS NVARCHAR) + '_' + 
+                   REPLACE(REPLACE(Environment, '-', '_'), ' ', '_')
+               ) AS ConsumerKey
+        FROM   ApiKeys
+        WHERE  Id = @Id";
 
     var result = await connection.QueryFirstOrDefaultAsync<ApiKeyInfoResponse>(
         query, new { Id = keyId });
@@ -272,6 +282,41 @@ public async Task UpdateApiKeyAndSecret(int keyId, string newAppKey, string newA
         throw new KeyNotFoundException($"ApiKey with Id {keyId} not found");
 
     return result;
+}
+public async Task SaveAccessToken(int keyId, string accessToken)
+{
+    using var connection = new SqlConnection(_connectionString);
+    await connection.ExecuteAsync(
+        "UPDATE ApiKeys SET AccessToken = @Token WHERE Id = @Id",
+        new { Id = keyId, Token = accessToken });
+}
+
+public async Task<string?> GetAccessToken(int keyId)
+{
+    using var connection = new SqlConnection(_connectionString);
+    return await connection.QueryFirstOrDefaultAsync<string>(
+        "SELECT AccessToken FROM ApiKeys WHERE Id = @Id",
+        new { Id = keyId });
+}
+
+public async Task UpdateConsumerKey(int keyId, string newConsumerKey)
+{
+    using var connection = new SqlConnection(_connectionString);
+    await connection.ExecuteAsync(
+        "UPDATE ApiKeys SET ConsumerKey = @ConsumerKey WHERE Id = @Id",
+        new { Id = keyId, ConsumerKey = newConsumerKey });
+}
+
+public async Task<string> GetConsumerKeyByAppKey(string appKey)
+{
+    using var connection = new SqlConnection(_connectionString);
+    var result = await connection.QueryFirstOrDefaultAsync<string>(
+        @"SELECT ISNULL(ConsumerKey,
+              CAST(ApplicationId AS NVARCHAR) + '_' +
+              REPLACE(REPLACE(Environment, '-', '_'), ' ', '_'))
+          FROM ApiKeys WHERE AppKey = @AppKey",
+        new { AppKey = appKey });
+    return result ?? throw new KeyNotFoundException("AppKey not found");
 }
     }
 }

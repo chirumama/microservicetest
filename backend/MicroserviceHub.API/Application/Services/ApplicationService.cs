@@ -4,24 +4,28 @@ using MicroserviceHub.API.Application.Interfaces;
 using MicroserviceHub.API.Domain.Entities;
 using MicroserviceHub.API.Infrastructure.ExternalServices;
 using Serilog;
+using MicroserviceHub.API.Utilities;
 
 namespace MicroserviceHub.API.Application.Services
 {
     public class ApplicationService : IApplicationService
-    {
-        private readonly IApplicationRepository _repository;
-        private readonly ApisixService _apisix;
-        private readonly IConfiguration _config;
+{
+    private readonly IApplicationRepository _repository;
+    private readonly ApisixService          _apisix;
+    private readonly IConfiguration         _config;
+    private readonly OAuthTokenService      _tokenService;
 
-        public ApplicationService(
-            IApplicationRepository repository,
-            ApisixService apisix,
-            IConfiguration config)
-        {
-            _repository = repository;
-            _apisix = apisix;
-            _config = config;
-        }
+    public ApplicationService(
+        IApplicationRepository repository,
+        ApisixService          apisix,
+        IConfiguration         config,
+        OAuthTokenService      tokenService)
+    {
+        _repository   = repository;
+        _apisix       = apisix;
+        _config       = config;
+        _tokenService = tokenService;
+    }
 
         public async Task<CreateApplicationResponse> CreateApplicationAsync(
             CreateApplicationRequest request)
@@ -46,19 +50,32 @@ namespace MicroserviceHub.API.Application.Services
             try
             {
                 foreach (var env in environments)
-                {
-                    var appKey    = "ak_" + Guid.NewGuid().ToString("N");
-                    var appSecret = "sk_" + Guid.NewGuid().ToString("N");
+{
+    var appKey    = "ak_" + Guid.NewGuid().ToString("N");
+    var appSecret = "sk_" + Guid.NewGuid().ToString("N");
 
-                    if (env == "Development") { devKey = appKey; devSecret = appSecret; }
+    if (env == "Development") { devKey = appKey; devSecret = appSecret; }
 
-                    await _repository.CreateApiKey(appId, env, appKey, appSecret);
+    await _repository.CreateApiKey(appId, env, appKey, appSecret);
 
-                    var consumerUsername = $"{appId}_{env.Replace("-", "_").Replace(" ", "_")}";
-                    await _apisix.RegisterConsumerAsync(consumerUsername, appKey, appSecret);
+    var consumerUsername = $"{appId}_{env.Replace("-", "_").Replace(" ", "_")}";
+    await _apisix.RegisterConsumerAsync(consumerUsername, appKey, appSecret);
 
-                    Log.Information("API Key registered for AppId: {AppId}, Env: {Env}", appId, env);
-                }
+    // Generate permanent token — no expiry, stored in DB
+    // Services list is empty at creation — admin hasn't granted anything yet
+    var permanentToken = _tokenService.GeneratePermanentApiToken(
+        appId:           appId,
+        environment:     env,
+        consumerUsername: consumerUsername,
+        enabledServices: new List<string>());
+
+    // Get the keyId just inserted to save the token
+    var keyRecord = await _repository.GetApiKeyByAppKey(appKey);
+    if (keyRecord != null)
+        await _repository.SaveAccessToken(keyRecord.Id, permanentToken);
+
+    Log.Information("Permanent token generated for AppId: {AppId}, Env: {Env}", appId, env);
+}
             }
             catch (Exception ex)
             {
@@ -100,9 +117,25 @@ namespace MicroserviceHub.API.Application.Services
             Log.Information("Updating settings for AppId: {AppId} by UserId: {UserId}", appId, userId);
 
             // Step 1 — update SQL inside a transaction
+             var allMicroservices = (await _repository.GetMicroservicesAsync()).ToList();
+                var enabled = request.Microservices
+    .Where(m => m.IsEnabled)
+    .Select(m => allMicroservices.FirstOrDefault(x => x.Id == m.Id)?.Name)
+    .Where(n => n != null)
+    .Select(n => n!)
+    .ToList();
+
+var disabled = request.Microservices
+    .Where(m => !m.IsEnabled)
+    .Select(m => allMicroservices.FirstOrDefault(x => x.Id == m.Id)?.Name)
+    .Where(n => n != null)
+    .Select(n => n!)
+    .ToList();
             await _repository.BeginTransaction();
             try
             {
+               
+
                 foreach (var micro in request.Microservices)
                     await _repository.UpsertMicroservice(appId, micro.Id, micro.IsEnabled);
 
@@ -125,7 +158,7 @@ namespace MicroserviceHub.API.Application.Services
                 .Get<Dictionary<string, string>>() ?? new Dictionary<string, string>();
 
             // Get all microservice names so we can map Id -> Name
-            var allMicroservices = (await _repository.GetMicroservicesAsync()).ToList();
+            
 
             var environments = new[] { "Development", "Pre-Production", "Production" };
 
@@ -147,53 +180,88 @@ namespace MicroserviceHub.API.Application.Services
                 }
 
                 // Update all three environment consumers on this route
-                foreach (var env in environments)
-                {
-                    var consumerUsername = $"{appId}_{env.Replace("-", "_").Replace(" ", "_")}";
-                    await _apisix.UpdateRouteAllowlistAsync(routeId, consumerUsername, micro.IsEnabled);
+                // Step 4 — regenerate permanent tokens for each environment
+                var details = await _repository.GetApplicationDetails(appId);
+foreach (var env in environments)
+{
+    var envRequest   = request.Environments.FirstOrDefault(e => e.Name == env);
+    var isEnvEnabled = envRequest?.IsEnabled ?? false;
 
-                    Log.Information(
-                        "APISix allowlist updated: route={RouteId}, consumer={Consumer}, allow={Allow}",
-                        routeId, consumerUsername, micro.IsEnabled);
-                }
+    var consumerUsername = $"{appId}_{env.Replace("-", "_").Replace(" ", "_")}";
+
+    var servicesForToken = isEnvEnabled ? enabled : new List<string>();
+
+    var newToken = _tokenService.GeneratePermanentApiToken(
+        appId:            appId,
+        environment:      env,
+        consumerUsername: consumerUsername,
+        enabledServices:  servicesForToken);
+
+    // Find the keyId for this app+env to save the token
+    
+    var envRecord = details.Environments.FirstOrDefault(e => e.Environment == env);
+    if (envRecord != null)
+        await _repository.SaveAccessToken(envRecord.Id, newToken);
+
+    Log.Information("Permanent token regenerated for AppId: {AppId}, Env: {Env}", appId, env);
+}
             }
             // Step 3 — update consumer labels to reflect current service state
 // Get the final state of all microservices for this app
-var enabled = request.Microservices
-    .Where(m => m.IsEnabled)
-    .Select(m => allMicroservices.First(x => x.Id == m.Id).Name)
-    .ToList();
 
+// Step 3 — update consumer labels per environment
 foreach (var env in environments)
 {
     var consumerUsername = $"{appId}_{env.Replace("-", "_").Replace(" ", "_")}";
-    await _apisix.UpdateConsumerLabelsAsync(consumerUsername, enabled);
+
+    // Check if this specific environment is enabled in the request
+    var envRequest = request.Environments.FirstOrDefault(e => e.Name == env);
+    var isEnvEnabled = envRequest?.IsEnabled ?? false;
+
+    if (isEnvEnabled)
+    {
+        // Environment is ON — show actual enabled/disabled services
+        await _apisix.UpdateConsumerLabelsAsync(consumerUsername, enabled, disabled);
+    }
+    else
+    {
+        // Environment is OFF — all services effectively disabled for this env
+        var allServices = allMicroservices.Select(m => m.Name).ToList();
+        await _apisix.UpdateConsumerLabelsAsync(consumerUsername, new List<string>(), allServices);
+    }
 
     Log.Information(
-        "Consumer labels updated: {Consumer}, enabled={Enabled}",
-        consumerUsername,
-        string.Join(",", enabled));
+        "Consumer labels updated: {Consumer}, envEnabled={EnvEnabled}, enabled={Enabled}",
+        consumerUsername, isEnvEnabled, string.Join(",", enabled));
 }
         }
 
       public async Task RegenerateSecretAsync(int keyId)
 {
-    Log.Information("Regenerating credentials for KeyId: {KeyId}", keyId);
-
     var newKey    = "ak_" + Guid.NewGuid().ToString("N");
     var newSecret = "sk_" + Guid.NewGuid().ToString("N");
 
-    // Fetch first — need ApplicationId + Environment for consumer username
-    var keyInfo = await _repository.GetApiKeyById(keyId);
+    var keyInfo          = await _repository.GetApiKeyById(keyId);
     var consumerUsername = $"{keyInfo.ApplicationId}_{keyInfo.Environment.Replace("-", "_").Replace(" ", "_")}";
+    var newConsumerKey   = $"{consumerUsername}_{Guid.NewGuid().ToString("N")[..8]}";
 
-    // Update BOTH AppKey and AppSecret in SQL Server
     await _repository.UpdateApiKeyAndSecret(keyId, newKey, newSecret);
+    await _repository.UpdateConsumerKey(keyId, newConsumerKey);
+    await _apisix.RegisterConsumerAsync(consumerUsername, newKey, newSecret, newConsumerKey);
 
-    // Update APISix consumer with both new values + updated desc
-    await _apisix.UpdateConsumerKeyAsync(consumerUsername, newKey, newSecret);
+    // Get current enabled services for this app to include in new token
+    var details         = await _repository.GetApplicationDetails(keyInfo.ApplicationId);
+    var enabledServices = details.Microservices.Where(m => m.IsEnabled).Select(m => m.Name).ToList();
 
-    Log.Information("Credentials regenerated for KeyId: {KeyId}, Consumer: {Consumer}", keyId, consumerUsername);
+    var newToken = _tokenService.GeneratePermanentApiToken(
+        appId:            keyInfo.ApplicationId,
+        environment:      keyInfo.Environment,
+        consumerUsername: newConsumerKey,
+        enabledServices:  enabledServices);
+
+    await _repository.SaveAccessToken(keyId, newToken);
+
+    Log.Information("Regenerated. KeyId: {KeyId}, NewConsumerKey: {CK}", keyId, newConsumerKey);
 }
          public async Task RevokeKeyAsync(int keyId)
         {
