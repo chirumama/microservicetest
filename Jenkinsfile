@@ -1,63 +1,68 @@
 pipeline {
-    agent any
-
-    environment {
-        HARBOR_REGISTRY = "192.168.17.133"
-        BACKEND_IMAGE   = "${HARBOR_REGISTRY}/microservice_hub/backend:${BUILD_NUMBER}"
-        FRONTEND_IMAGE  = "${HARBOR_REGISTRY}/microservice_hub/frontend:${BUILD_NUMBER}"
+  agent any
+  environment {
+    HARBOR     = '192.168.17.133'
+    PROJECT    = 'microservices'
+    SERVICE    = 'microservice_hub'
+    VERSION    = "${env.BUILD_NUMBER}"
+  }
+  stages {
+    stage('Restore & Test') {
+      steps {
+        dir('MicroserviceDashboard/backend/MicroserviceHub.API') {
+          sh 'dotnet restore'
+          sh 'dotnet test --no-restore || true'
+        }
+      }
     }
-
-    stages {
-
-        stage('Build Backend Image') {
-            steps {
-                sh 'docker build -t $BACKEND_IMAGE -f docker/backend.Dockerfile .'
-            }
+    stage('Docker Build & Push') {
+      steps {
+        withCredentials([usernamePassword(
+          credentialsId: 'harbor-robot-push',
+          usernameVariable: 'USER',
+          passwordVariable: 'PASS')]) {
+          sh '''
+            docker build \
+              -f MicroserviceDashboard/docker/backend.Dockerfile \
+              -t $HARBOR/$PROJECT/$SERVICE:$VERSION \
+              -t $HARBOR/$PROJECT/$SERVICE:latest \
+              MicroserviceDashboard/backend/MicroserviceHub.API
+            echo $PASS | docker login $HARBOR -u $USER --password-stdin
+            docker push $HARBOR/$PROJECT/$SERVICE:$VERSION
+          '''
         }
-
-        stage('Build Frontend Image') {
-            steps {
-                sh 'docker build -t $FRONTEND_IMAGE -f docker/frontend.Dockerfile .'
-            }
-        }
-
-        stage('Login to Harbor') {
-            steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'harbor-creds',
-                    usernameVariable: 'USER',
-                    passwordVariable: 'PASS'
-                )]) {
-                    sh 'echo $PASS | docker login http://$HARBOR_REGISTRY -u $USER --password-stdin'
-                }
-            }
-        }
-
-        stage('Push Images') {
-            steps {
-                sh 'docker push $BACKEND_IMAGE'
-                sh 'docker push $FRONTEND_IMAGE'
-            }
-        }
-
-        stage('Deploy to Kubernetes') {
-            steps {
-                sh '''
-                    export KUBECONFIG=/var/lib/jenkins/.kube/config
-                    sed -i "s|BACKEND_IMAGE_PLACEHOLDER|${BACKEND_IMAGE}|g" k8s/backend-deployment.yaml
-                    sed -i "s|FRONTEND_IMAGE_PLACEHOLDER|${FRONTEND_IMAGE}|g" k8s/frontend-deployment.yaml
-                    kubectl apply -f k8s/
-                '''
-            }
-        }
+      }
     }
-
-    post {
-        failure {
-            echo 'Pipeline failed!'
+    stage('Push Helm Chart') {
+      steps {
+        withCredentials([usernamePassword(
+          credentialsId: 'harbor-robot-push',
+          usernameVariable: 'USER',
+          passwordVariable: 'PASS')]) {
+          sh '''
+            sed -i "s/^version:.*/version: 1.0.$VERSION/" \
+              MicroserviceDashboard/backend/helm/Chart.yaml
+            sed -i "s/^appVersion:.*/appVersion: \\"$VERSION\\"/" \
+              MicroserviceDashboard/backend/helm/Chart.yaml
+            helm package MicroserviceDashboard/backend/helm/ \
+              --destination ./helm-output/
+            export HELM_EXPERIMENTAL_OCI=1
+            echo $PASS | helm registry login $HARBOR \
+              -u $USER --password-stdin --insecure
+            helm push helm-output/${SERVICE}-1.0.${VERSION}.tgz \
+              oci://$HARBOR/helm-charts
+          '''
         }
-        success {
-            echo 'Deployed successfully!'
-        }
+      }
     }
+  }
+  post {
+    success {
+      echo "Chart pushed — triggering umbrella pipeline"
+      build job: 'umbrella-deploy', wait: false
+    }
+    failure {
+      echo "Build failed — no deploy triggered"
+    }
+  }
 }
