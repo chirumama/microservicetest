@@ -84,6 +84,34 @@ namespace MicroserviceHub.API.Controllers
             return Ok(result);
         }
 
+        /// <summary>
+        /// GET /Application/{appId}/microservices/{msId}/routes
+        /// Returns all routes for a microservice with their enabled state for this application.
+        /// Admin only.
+        /// </summary>
+        [HttpGet("{appId}/microservices/{msId}/routes")]
+        public async Task<IActionResult> GetRoutes(int appId, int msId)
+        {
+            if (GetRoleId() != 2) return Forbid();
+            var result = await _service.GetMicroserviceRoutesAsync(appId, msId);
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// PUT /Application/{appId}/microservices/{msId}/routes
+        /// Updates which specific routes are enabled for this application.
+        /// Syncs per-route whitelists to APISix immediately.
+        /// Admin only.
+        /// </summary>
+        [HttpPut("{appId}/microservices/{msId}/routes")]
+        public async Task<IActionResult> UpdateRoutes(
+            int appId, int msId, UpdateRouteAccessRequest request)
+        {
+            if (GetRoleId() != 2) return Forbid();
+            await _service.UpdateRouteAccessAsync(appId, msId, request);
+            return Ok(new { message = "Route access updated successfully" });
+        }
+
         private int GetUserId()
         {
             var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value

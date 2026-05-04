@@ -176,3 +176,35 @@ export interface UserSummary {
 export async function getUsers(): Promise<UserSummary[]> {
   return request<UserSummary[]>("/auth/users");
 }
+
+// ─── Route-level access ───────────────────────────────────────────────────
+
+export interface RouteDto {
+  routeId:     string;
+  method:      string;
+  path:        string;
+  description?: string;
+  isEnabled:   boolean;
+}
+
+export interface MicroserviceWithRoutes {
+  microserviceId:   number;
+  microserviceName: string;
+  isEnabled:        boolean;
+  routes:           RouteDto[];
+}
+
+export async function getMicroserviceRoutes(appId: number, msId: number): Promise<MicroserviceWithRoutes> {
+  return request<MicroserviceWithRoutes>(`/Application/${appId}/microservices/${msId}/routes`);
+}
+
+export async function updateRouteAccess(
+  appId: number,
+  msId: number,
+  routes: { routeId: string; isEnabled: boolean }[]
+): Promise<void> {
+  return request<void>(`/Application/${appId}/microservices/${msId}/routes`, {
+    method: "PUT",
+    body: JSON.stringify({ routes }),
+  });
+}

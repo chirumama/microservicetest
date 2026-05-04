@@ -259,5 +259,51 @@ public async Task RegisterUpstreamAsync(string upstreamId, string host, int port
         throw new Exception($"APISix upstream register failed [{response.StatusCode}]: {error}");
     }
 }
+
+        /// <summary>
+        /// Syncs a specific APISix route's consumer-restriction whitelist.
+        /// Consumers in allowedConsumers will be permitted; all others will get 403.
+        /// </summary>
+        public async Task SyncRouteWhitelistAsync(string routeId, List<string> allowedConsumers)
+        {
+            string patchBody;
+            if (allowedConsumers.Count == 0)
+            {
+                patchBody = @"{
+    ""plugins"": {
+        ""consumer-restriction"": {
+            ""type"": ""consumer_name"",
+            ""whitelist"": [],
+            ""rejected_code"": 403
+        }
+    }
+}";
+            }
+            else
+            {
+                var whitelistJson = "[" + string.Join(",", allowedConsumers.Select(x => $"\"{x}\"")) + "]";
+                patchBody = $@"{{
+    ""plugins"": {{
+        ""consumer-restriction"": {{
+            ""type"": ""consumer_name"",
+            ""whitelist"": {whitelistJson},
+            ""rejected_code"": 403
+        }}
+    }}
+}}";
+            }
+
+            var patchContent = new StringContent(patchBody, System.Text.Encoding.UTF8, "application/json");
+            var patchReq     = new HttpRequestMessage(HttpMethod.Patch,
+                $"{_adminUrl}/apisix/admin/routes/{routeId}") { Content = patchContent };
+
+            var patchResp = await _http.SendAsync(patchReq);
+            if (!patchResp.IsSuccessStatusCode)
+            {
+                var err = await patchResp.Content.ReadAsStringAsync();
+                throw new Exception($"APISix route whitelist sync failed [{patchResp.StatusCode}]: {err}");
+            }
+        }
+
     }
 }
