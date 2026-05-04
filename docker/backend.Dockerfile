@@ -1,18 +1,15 @@
-# ------sssssss---- BUILD STAGE ----------
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-WORKDIR /app
-
-COPY backend/MicroserviceHub.API/*.csproj ./
+WORKDIR /src
+COPY *.csproj .
 RUN dotnet restore
+COPY . .
+RUN dotnet publish -c Release -o /app/publish
 
-COPY backend/MicroserviceHub.API/. ./
-RUN dotnet publish -c Release -o /out
-
-# ---------- RUNTIME STAGE ----------
-FROM mcr.microsoft.com/dotnet/aspnet:8.0
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
-
-COPY --from=build /out ./
-
-EXPOSE 80
+COPY --from=build /app/publish .
+RUN adduser --disabled-password --gecos "" appuser
+USER appuser
+ENV ASPNETCORE_URLS=http://+:8080
+EXPOSE 8080
 ENTRYPOINT ["dotnet", "MicroserviceHub.API.dll"]
