@@ -35,5 +35,9 @@ namespace MicroserviceHub.API.Application.Interfaces
         Task<List<MicroserviceRoute>>      GetMicroserviceRoutesAsync(int microserviceId);
         Task         UpsertApplicationRouteAsync(int appId, int microserviceId, string routeId, bool isEnabled);
         Task<List<string>> GetEnabledRouteIdsAsync(int appId, int microserviceId);
+         // APISix → DB sync
+    Task<int>  UpsertMicroserviceByNameAsync(string name, string description);
+    Task       UpsertMicroserviceRouteAsync(int microserviceId, string routeId,
+                   string method, string path, string description);
     }
 }

@@ -21,9 +21,9 @@ namespace MicroserviceHub.API.Infrastructure.Repositories
         public async Task<int> CreateApplication(Domain.Entities.Application app)
         {
             await using var connection = new NpgsqlConnection(_connectionString);
-            // PostgreSQL uses RETURNING instead of SCOPE_IDENTITY / OUTPUT
+            // FIX: DB columns are lowercase (userid, createdat) — no underscores
             var query = @"
-                INSERT INTO applications (user_id, title, description, status, created_at)
+                INSERT INTO applications (userid, title, description, status, createdat)
                 VALUES (@UserId, @Title, @Description, @Status, @CreatedAt)
                 RETURNING id";
             return await connection.ExecuteScalarAsync<int>(query, app);
@@ -32,8 +32,9 @@ namespace MicroserviceHub.API.Infrastructure.Repositories
         public async Task DeleteApplication(int appId)
         {
             await using var connection = new NpgsqlConnection(_connectionString);
+            // FIX: apikeys.applicationid (no underscore)
             await connection.ExecuteAsync(
-                "DELETE FROM api_keys WHERE application_id = @Id", new { Id = appId });
+                "DELETE FROM apikeys WHERE applicationid = @Id", new { Id = appId });
             await connection.ExecuteAsync(
                 "DELETE FROM applications WHERE id = @Id", new { Id = appId });
         }
@@ -41,11 +42,12 @@ namespace MicroserviceHub.API.Infrastructure.Repositories
         public async Task UpdateApiKeyAndSecret(int keyId, string newAppKey, string newAppSecret)
         {
             await using var connection = new NpgsqlConnection(_connectionString);
+            // FIX: apikeys columns are appkey, appsecretHash, updatedat
             await connection.ExecuteAsync(@"
-                UPDATE api_keys
-                SET app_key        = @AppKey,
-                    app_secret_hash = @AppSecret,
-                    updated_at     = NOW()
+                UPDATE apikeys
+                SET appkey          = @AppKey,
+                    appsecretHash   = @AppSecret,
+                    updatedat       = NOW()
                 WHERE id = @Id",
                 new { Id = keyId, AppKey = newAppKey, AppSecret = newAppSecret });
         }
@@ -54,10 +56,11 @@ namespace MicroserviceHub.API.Infrastructure.Repositories
         {
             await using var connection = new NpgsqlConnection(_connectionString);
             var consumerKey = $"{appId}_{environment.Replace("-", "_").Replace(" ", "_")}";
+            // FIX: columns applicationid, appkey, appsecretHash, consumerkey, isactive, isenvironmentenabled, createdat
             await connection.ExecuteAsync(@"
-                INSERT INTO api_keys
-                    (application_id, environment, app_key, app_secret_hash,
-                     consumer_key, is_active, is_environment_enabled, created_at)
+                INSERT INTO apikeys
+                    (applicationid, environment, appkey, appsecretHash,
+                     consumerkey, isactive, isenvironmentenabled, createdat)
                 VALUES
                     (@ApplicationId, @Environment, @ApiKey, @ApiSecretHash,
                      @ConsumerKey, TRUE, TRUE, NOW())",
@@ -74,11 +77,12 @@ namespace MicroserviceHub.API.Infrastructure.Repositories
         public async Task<List<GetApplicationResponse>> GetApplicationsByUser(int userId)
         {
             await using var connection = new NpgsqlConnection(_connectionString);
+            // FIX: applications.userid, users.id (no underscore joins)
             var result = await connection.QueryAsync<GetApplicationResponse>(@"
                 SELECT a.id, a.title, a.description, u.email AS ownerEmail
                 FROM applications a
-                JOIN users u ON a.user_id = u.id
-                WHERE a.user_id = @UserId",
+                JOIN users u ON a.userid = u.id
+                WHERE a.userid = @UserId",
                 new { UserId = userId });
             return result.ToList();
         }
@@ -86,10 +90,11 @@ namespace MicroserviceHub.API.Infrastructure.Repositories
         public async Task<List<GetApplicationResponse>> GetAllApplications()
         {
             await using var connection = new NpgsqlConnection(_connectionString);
+            // FIX: applications.userid
             var result = await connection.QueryAsync<GetApplicationResponse>(@"
                 SELECT a.id, a.title, a.description, u.email AS ownerEmail
                 FROM applications a
-                JOIN users u ON a.user_id = u.id");
+                JOIN users u ON a.userid = u.id");
             return result.ToList();
         }
 
@@ -104,20 +109,23 @@ namespace MicroserviceHub.API.Infrastructure.Repositories
             if (app == null)
                 throw new KeyNotFoundException($"Application {appId} not found");
 
+            // FIX: apikeys columns — applicationid, appkey, appsecretHash, isenvironmentenabled
             var environments = (await connection.QueryAsync<EnvironmentDto>(@"
-                SELECT id, environment, app_key AS apiKey, app_secret_hash AS apiSecret,
-                       is_environment_enabled AS isEnabled
-                FROM api_keys
-                WHERE application_id = @AppId",
+                SELECT id, environment,
+                       appkey        AS apiKey,
+                       appsecretHash AS apiSecret,
+                       isenvironmentenabled AS isEnabled
+                FROM apikeys
+                WHERE applicationid = @AppId",
                 new { AppId = appId })).ToList();
 
-            // PostgreSQL uses COALESCE instead of ISNULL, and BOOL instead of INT for IsEnabled
+            // FIX: applicationmicroservices columns — microserviceid, applicationid, isenabled
             var microservices = (await connection.QueryAsync<MicroserviceDto>(@"
                 SELECT m.id, m.name,
-                       COALESCE(am.is_enabled, FALSE) AS isEnabled
+                       COALESCE(am.isenabled, FALSE) AS isEnabled
                 FROM microservices m
-                LEFT JOIN application_microservices am
-                    ON m.id = am.microservice_id AND am.application_id = @AppId",
+                LEFT JOIN applicationmicroservices am
+                    ON m.id = am.microserviceid AND am.applicationid = @AppId",
                 new { AppId = appId })).ToList();
 
             return new GetApplicationDetailsResponse
@@ -132,51 +140,60 @@ namespace MicroserviceHub.API.Infrastructure.Repositories
         public async Task UpdateEnvironment(int appId, string environment, bool isEnabled)
         {
             await using var connection = new NpgsqlConnection(_connectionString);
+            // FIX: apikeys.isenvironmentenabled, applicationid, updatedat
             await connection.ExecuteAsync(@"
-                UPDATE api_keys
-                SET is_environment_enabled = @IsEnabled, updated_at = NOW()
-                WHERE application_id = @AppId AND environment = @Environment",
+                UPDATE apikeys
+                SET isenvironmentenabled = @IsEnabled, updatedat = NOW()
+                WHERE applicationid = @AppId AND environment = @Environment",
                 new { AppId = appId, Environment = environment, IsEnabled = isEnabled });
         }
 
         public async Task<ApiKeyFullRecord?> GetApiKeyByAppKey(string appKey)
         {
             await using var connection = new NpgsqlConnection(_connectionString);
+            // FIX: all column aliases map to correct no-underscore DB names
             return await connection.QueryFirstOrDefaultAsync<ApiKeyFullRecord>(@"
-                SELECT id, application_id AS applicationid, environment, app_key AS appkey,
-                       app_secret_hash AS appsecretHash, is_active AS isactive,
-                       is_environment_enabled AS isenvironmentenabled
-                FROM api_keys
-                WHERE app_key = @AppKey",
+                SELECT id,
+                       applicationid       AS applicationid,
+                       environment,
+                       appkey              AS appkey,
+                       appsecretHash       AS appsecretHash,
+                       isactive            AS isactive,
+                       isenvironmentenabled AS isenvironmentenabled
+                FROM apikeys
+                WHERE appkey = @AppKey",
                 new { AppKey = appKey });
         }
 
         public async Task UpsertMicroservice(int appId, int microserviceId, bool isEnabled)
         {
             await using var connection = new NpgsqlConnection(_connectionString);
-            // PostgreSQL INSERT … ON CONFLICT replaces MSSQL IF EXISTS / MERGE
+            // FIX: applicationmicroservices columns — applicationid, microserviceid, isenabled, createdat
+            // UNIQUE constraint is (applicationid, microserviceid)
             await connection.ExecuteAsync(@"
-                INSERT INTO application_microservices (application_id, microservice_id, is_enabled, created_at)
+                INSERT INTO applicationmicroservices (applicationid, microserviceid, isenabled, createdat)
                 VALUES (@AppId, @MicroserviceId, @IsEnabled, NOW())
-                ON CONFLICT (application_id, microservice_id)
-                DO UPDATE SET is_enabled = @IsEnabled, updated_at = NOW()",
+                ON CONFLICT (applicationid, microserviceid)
+                DO UPDATE SET isenabled = @IsEnabled, updatedat = NOW()",
                 new { AppId = appId, MicroserviceId = microserviceId, IsEnabled = isEnabled });
         }
 
         public async Task UpdateApiSecret(int keyId, string newSecret)
         {
             await using var connection = new NpgsqlConnection(_connectionString);
+            // FIX: apikeys.appsecretHash, updatedat
             await connection.ExecuteAsync(@"
-                UPDATE api_keys SET app_secret_hash = @Secret, updated_at = NOW() WHERE id = @Id",
+                UPDATE apikeys SET appsecretHash = @Secret, updatedat = NOW() WHERE id = @Id",
                 new { Id = keyId, Secret = newSecret });
         }
 
         public async Task RevokeApiKey(int keyId)
         {
             await using var connection = new NpgsqlConnection(_connectionString);
+            // FIX: apikeys.isactive, isenvironmentenabled, updatedat
             await connection.ExecuteAsync(@"
-                UPDATE api_keys
-                SET is_active = FALSE, is_environment_enabled = FALSE, updated_at = NOW()
+                UPDATE apikeys
+                SET isactive = FALSE, isenvironmentenabled = FALSE, updatedat = NOW()
                 WHERE id = @Id",
                 new { Id = keyId });
         }
@@ -218,13 +235,17 @@ namespace MicroserviceHub.API.Infrastructure.Repositories
         public async Task<ApiKeyInfoResponse> GetApiKeyById(int keyId)
         {
             await using var connection = new NpgsqlConnection(_connectionString);
+            // FIX: applicationid, appkey, consumerkey (no underscores)
             var result = await connection.QueryFirstOrDefaultAsync<ApiKeyInfoResponse>(@"
-                SELECT id, application_id AS applicationId, environment, app_key AS appKey,
-                       COALESCE(consumer_key,
-                           CAST(application_id AS TEXT) || '_' ||
+                SELECT id,
+                       applicationid AS applicationId,
+                       environment,
+                       appkey        AS appKey,
+                       COALESCE(consumerkey,
+                           CAST(applicationid AS TEXT) || '_' ||
                            REPLACE(REPLACE(environment, '-', '_'), ' ', '_')
                        ) AS consumerKey
-                FROM api_keys
+                FROM apikeys
                 WHERE id = @Id",
                 new { Id = keyId });
 
@@ -237,39 +258,42 @@ namespace MicroserviceHub.API.Infrastructure.Repositories
         public async Task SaveAccessToken(int keyId, string accessToken)
         {
             await using var connection = new NpgsqlConnection(_connectionString);
+            // FIX: apikeys.accesstoken (no underscore)
             await connection.ExecuteAsync(
-                "UPDATE api_keys SET access_token = @Token WHERE id = @Id",
+                "UPDATE apikeys SET accesstoken = @Token WHERE id = @Id",
                 new { Id = keyId, Token = accessToken });
         }
 
         public async Task<string?> GetAccessToken(int keyId)
         {
             await using var connection = new NpgsqlConnection(_connectionString);
+            // FIX: apikeys.accesstoken
             return await connection.QueryFirstOrDefaultAsync<string>(
-                "SELECT access_token FROM api_keys WHERE id = @Id",
+                "SELECT accesstoken FROM apikeys WHERE id = @Id",
                 new { Id = keyId });
         }
 
         public async Task UpdateConsumerKey(int keyId, string newConsumerKey)
         {
             await using var connection = new NpgsqlConnection(_connectionString);
+            // FIX: apikeys.consumerkey
             await connection.ExecuteAsync(
-                "UPDATE api_keys SET consumer_key = @ConsumerKey WHERE id = @Id",
+                "UPDATE apikeys SET consumerkey = @ConsumerKey WHERE id = @Id",
                 new { Id = keyId, ConsumerKey = newConsumerKey });
         }
 
         public async Task<string> GetConsumerKeyByAppKey(string appKey)
         {
             await using var connection = new NpgsqlConnection(_connectionString);
+            // FIX: consumerkey, applicationid, appkey
             var result = await connection.QueryFirstOrDefaultAsync<string>(@"
-                SELECT COALESCE(consumer_key,
-                    CAST(application_id AS TEXT) || '_' ||
+                SELECT COALESCE(consumerkey,
+                    CAST(applicationid AS TEXT) || '_' ||
                     REPLACE(REPLACE(environment, '-', '_'), ' ', '_'))
-                FROM api_keys WHERE app_key = @AppKey",
+                FROM apikeys WHERE appkey = @AppKey",
                 new { AppKey = appKey });
             return result ?? throw new KeyNotFoundException("AppKey not found");
         }
-    
 
 
         // ── Route methods ─────────────────────────────────────────────────────
@@ -281,6 +305,7 @@ namespace MicroserviceHub.API.Infrastructure.Repositories
         public async Task<List<MicroserviceRouteDto>> GetRoutesForAppAsync(int appId, int microserviceId)
         {
             await using var connection = new NpgsqlConnection(_connectionString);
+            // FIX: microserviceroutes and applicationroutes use no-underscore column names
             var rows = await connection.QueryAsync<MicroserviceRouteDto>(@"
                 SELECT
                     mr.routeid      AS routeid,
@@ -306,6 +331,7 @@ namespace MicroserviceHub.API.Infrastructure.Repositories
         public async Task<List<MicroserviceRoute>> GetMicroserviceRoutesAsync(int microserviceId)
         {
             await using var connection = new NpgsqlConnection(_connectionString);
+            // FIX: microserviceroutes column names — microserviceid, routeid, isactive, createdat
             var rows = await connection.QueryAsync<MicroserviceRoute>(@"
                 SELECT id, microserviceid, routeid, method, path, description, isactive, createdat
                 FROM microserviceroutes
@@ -321,6 +347,8 @@ namespace MicroserviceHub.API.Infrastructure.Repositories
         public async Task UpsertApplicationRouteAsync(int appId, int microserviceId, string routeId, bool isEnabled)
         {
             await using var connection = new NpgsqlConnection(_connectionString);
+            // FIX: applicationroutes columns — applicationid, microserviceid, routeid, isenabled, createdat, updatedat
+            // UNIQUE constraint is (applicationid, routeid)
             await connection.ExecuteAsync(@"
                 INSERT INTO applicationroutes (applicationid, microserviceid, routeid, isenabled, createdat)
                 VALUES (@AppId, @MsId, @RouteId, @IsEnabled, NOW())
@@ -336,6 +364,7 @@ namespace MicroserviceHub.API.Infrastructure.Repositories
         public async Task<List<string>> GetEnabledRouteIdsAsync(int appId, int microserviceId)
         {
             await using var connection = new NpgsqlConnection(_connectionString);
+            // FIX: microserviceroutes.microserviceid, routeid, isactive; applicationroutes.applicationid, isenabled
             var rows = await connection.QueryAsync<string>(@"
                 SELECT mr.routeid
                 FROM microserviceroutes mr
@@ -346,4 +375,60 @@ namespace MicroserviceHub.API.Infrastructure.Repositories
                   AND COALESCE(ar.isenabled, TRUE) = TRUE",
                 new { AppId = appId, MsId = microserviceId });
             return rows.ToList();
-        }}}
+        }
+                public async Task<int> UpsertMicroserviceByNameAsync(string name, string description)
+        {
+            await using var connection = new NpgsqlConnection(_connectionString);
+ 
+            // Try to find an existing row first
+            var existing = await connection.QueryFirstOrDefaultAsync<int?>(@"
+                SELECT id FROM microservices WHERE name = @Name",
+                new { Name = name });
+ 
+            if (existing.HasValue)
+                return existing.Value;
+ 
+            // Not found — insert and return new id
+            var newId = await connection.ExecuteScalarAsync<int>(@"
+                INSERT INTO microservices (name, description, isactive, createdat)
+                VALUES (@Name, @Description, TRUE, NOW())
+                ON CONFLICT DO NOTHING
+                RETURNING id",
+                new { Name = name, Description = description });
+ 
+            // Edge case: two concurrent requests could both reach here;
+            // ON CONFLICT DO NOTHING returns 0 rows, so re-query.
+            if (newId == 0)
+            {
+                newId = await connection.QueryFirstOrDefaultAsync<int>(@"
+                    SELECT id FROM microservices WHERE name = @Name",
+                    new { Name = name });
+            }
+ 
+            return newId;
+        }
+public async Task UpsertMicroserviceRouteAsync(
+            int    microserviceId,
+            string routeId,
+            string method,
+            string path,
+            string description)
+        {
+            await using var connection = new NpgsqlConnection(_connectionString);
+            await connection.ExecuteAsync(@"
+                INSERT INTO microserviceroutes
+                    (microserviceid, routeid, method, path, description, isactive, createdat)
+                VALUES
+                    (@MicroserviceId, @RouteId, @Method, @Path, @Description, TRUE, NOW())
+                ON CONFLICT (microserviceid, routeid) DO NOTHING",
+                new
+                {
+                    MicroserviceId = microserviceId,
+                    RouteId        = routeId,
+                    Method         = method,
+                    Path           = path,
+                    Description    = description,
+                });
+        } 
+    }
+}
