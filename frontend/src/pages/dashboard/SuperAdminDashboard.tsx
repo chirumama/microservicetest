@@ -6,26 +6,31 @@ import { createUser, getUsers, type UserSummary } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
+// Password must be 8+ chars with uppercase, lowercase, digit, and special char
+const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+const PASSWORD_HINT  =
+  "Must be 8+ chars and include an uppercase letter, lowercase letter, number, and special character (@$!%*?&).";
+
 export default function SuperAdminDashboard() {
   const [tab, setTab] = useState<"create" | "manage">("create");
 
   // Create user form state
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [roleId, setRoleId] = useState("");
+  const [email, setEmail]               = useState("");
+  const [password, setPassword]         = useState("");
+  const [roleId, setRoleId]             = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [successMsg, setSuccessMsg] = useState("");
-  const [errors, setErrors] = useState<{
+  const [loading, setLoading]           = useState(false);
+  const [successMsg, setSuccessMsg]     = useState("");
+  const [errors, setErrors]             = useState<{
     email?: string; password?: string; roleId?: string; api?: string;
   }>({});
 
   // Users list state
-  const [users, setUsers] = useState<UserSummary[]>([]);
+  const [users, setUsers]               = useState<UserSummary[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
 
   const { logout } = useAuth();
-  const navigate = useNavigate();
+  const navigate   = useNavigate();
 
   const fetchUsers = async () => {
     setUsersLoading(true);
@@ -45,9 +50,17 @@ export default function SuperAdminDashboard() {
 
   const handleCreateUser = async () => {
     const newErrors: typeof errors = {};
+
     if (!email.trim()) newErrors.email = "Email is required";
-    if (!password.trim()) newErrors.password = "Password is required";
+
+    if (!password.trim()) {
+      newErrors.password = "Password is required";
+    } else if (!PASSWORD_REGEX.test(password)) {
+      newErrors.password = PASSWORD_HINT;
+    }
+
     if (!roleId) newErrors.roleId = "Role is required";
+
     if (Object.keys(newErrors).length) { setErrors(newErrors); return; }
 
     setErrors({}); setLoading(true); setSuccessMsg("");
@@ -125,8 +138,14 @@ export default function SuperAdminDashboard() {
           <InputField
             label="Password" type={showPassword ? "text" : "password"} value={password}
             onChange={(e: ChangeEvent<HTMLInputElement>) => {
-              setPassword(e.target.value);
-              if (errors.password) setErrors(p => ({ ...p, password: "" }));
+              const val = e.target.value;
+              setPassword(val);
+              // Live validation
+              if (val && !PASSWORD_REGEX.test(val)) {
+                setErrors(p => ({ ...p, password: PASSWORD_HINT }));
+              } else {
+                setErrors(p => ({ ...p, password: "" }));
+              }
             }}
             placeholder="Enter password..." fullWidth required
             error={!!errors.password} helperText={errors.password}
@@ -184,12 +203,8 @@ export default function SuperAdminDashboard() {
                 <tbody>
                   {users.map((u, i) => (
                     <tr key={u.id}>
-                      <td style={{ padding: "12px 16px", verticalAlign: "middle" }}>
-                        {i + 1}
-                      </td>
-                      <td style={{ padding: "12px 16px", verticalAlign: "middle" }}>
-                        {u.email}
-                      </td>
+                      <td style={{ padding: "12px 16px", verticalAlign: "middle" }}>{i + 1}</td>
+                      <td style={{ padding: "12px 16px", verticalAlign: "middle" }}>{u.email}</td>
                       <td style={{ padding: "12px 16px", verticalAlign: "middle" }}>
                         <span style={{
                           padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 500,
@@ -221,8 +236,6 @@ export default function SuperAdminDashboard() {
                   ))}
                 </tbody>
               </table>
-
-              {/* Footer count */}
               <div style={{
                 padding: "10px 16px", background: "#f8f9fa",
                 fontSize: 13, color: "#667085", borderTop: "1px solid #eee"
@@ -233,7 +246,6 @@ export default function SuperAdminDashboard() {
           )}
         </div>
       )}
-
     </div>
   );
 }

@@ -8,5 +8,8 @@ namespace MicroserviceHub.API.Application.Interfaces
         Task<LoginResponse> LoginAsync(LoginRequest request);
         Task CreateUserAsync(CreateUserRequest request);
         Task<List<UserSummaryResponse>> GetUsersAsync();
+
+        Task<string> GenerateOtpAsync(int userId);
+        Task<LoginResponse> VerifyOtpAsync(VerifyOtpRequest request);  // ← this line is what's missing
     }
 }

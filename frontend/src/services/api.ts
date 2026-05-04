@@ -1,12 +1,12 @@
-// const BASE_URL = "http://192.168.17.129:30081/v1.0.1";
-
 const BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "/v1.0.1";
 
-// Read userId and roleId from localStorage (set on login, no JWT anywhere)
-
+// Reads JWT token set after OTP verification
+function getToken(): string | null {
+  return localStorage.getItem("accessToken");
+}
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const token = localStorage.getItem("accessToken");
+  const token = getToken();
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -35,18 +35,39 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
 // ─── Auth ─────────────────────────────────────────────────────────────────
 
+/** Step 1: Login response — always has RequiresOtp = true */
 export interface LoginResponse {
+  userId:      number;
+  roleId:      number;
+  role:        string;   // "User" | "Admin" | "SuperAdmin"
+  email:       string;
+  requiresOtp: boolean;
+  otp?:        string;   // echoed back in dev; remove in production
+}
+
+/** Step 2: Verify-OTP response — includes the JWT */
+export interface VerifyOtpResponse {
+  userId:      number;
+  roleId:      number;
+  role:        string;
+  email:       string;
+  requiresOtp: boolean;
   accessToken: string;
   tokenType:   string;
   expiresIn:   number;
-  role:        string;
-  email:       string;
 }
 
 export async function login(email: string, password: string): Promise<LoginResponse> {
   return request<LoginResponse>("/auth/login", {
     method: "POST",
     body: JSON.stringify({ email, password }),
+  });
+}
+
+export async function verifyOtp(userId: number, otp: string): Promise<VerifyOtpResponse> {
+  return request<VerifyOtpResponse>("/auth/verify-otp", {
+    method: "POST",
+    body: JSON.stringify({ userId, otp }),
   });
 }
 
@@ -73,7 +94,7 @@ export interface CreateApplicationResponse {
 }
 
 export interface EnvironmentDto {
-  id: number;           // ApiKeys.Id — used for regenerate/revoke
+  id: number;
   environment: string;
   apiKey: string;
   apiSecret: string;

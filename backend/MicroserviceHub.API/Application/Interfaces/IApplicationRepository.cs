@@ -12,7 +12,7 @@ namespace MicroserviceHub.API.Application.Interfaces
         Task<List<GetApplicationResponse>> GetAllApplications();
 
         Task DeleteApplication(int appId);
-        Task<Domain.Entities.Application> GetApplicationById(int appId);
+        Task<Domain.Entities.Application?> GetApplicationById(int appId);
 
         Task<GetApplicationDetailsResponse> GetApplicationDetails(int appId);
 

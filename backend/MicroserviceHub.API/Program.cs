@@ -126,15 +126,8 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 builder.Services.AddHealthChecks()
-    .AddCheck("postgres", () =>
-    {
-        var conn = builder.Configuration.GetConnectionString("DefaultConnection");
-
-        if (string.IsNullOrEmpty(conn))
-            return HealthCheckResult.Unhealthy("Connection string missing");
-
-        return HealthCheckResult.Healthy();
-    })
+    // PostgreSQL health check using NpgSql
+    .AddNpgSql(builder.Configuration.GetConnectionString("DefaultConnection")!, name: "postgres")
     .AddCheck("self", () => HealthCheckResult.Healthy());
 
 var app = builder.Build();

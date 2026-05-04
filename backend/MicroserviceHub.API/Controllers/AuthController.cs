@@ -2,7 +2,6 @@
 using MicroserviceHub.API.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace MicroserviceHub.API.Controllers
 {
@@ -17,15 +16,38 @@ namespace MicroserviceHub.API.Controllers
             _authService = authService;
         }
 
-        // Public — no auth needed
+        /// <summary>
+        /// POST /v1.0.1/auth/login
+        /// Step 1: Validates credentials and returns UserId, RoleId, Role, Email, RequiresOtp=true.
+        /// The OTP (echoed back for dev) must be submitted to /verify-otp to receive the JWT.
+        /// </summary>
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginRequest request)
         {
             var result = await _authService.LoginAsync(request);
             return Ok(result);
         }
+// [HttpPost("dev-hash")]
+// public IActionResult DevHash([FromBody] string password)
+// {
+//     var hash = BCrypt.Net.BCrypt.HashPassword(password);
+//     return Ok(new { hash });
+// }
+        /// <summary>
+        /// POST /v1.0.1/auth/verify-otp
+        /// Step 2: Submits the OTP. On success returns the JWT AccessToken.
+        /// </summary>
+        [HttpPost("verify-otp")]
+        public async Task<IActionResult> VerifyOtp(VerifyOtpRequest request)
+        {
+            var result = await _authService.VerifyOtpAsync(request);
+            return Ok(result);
+        }
 
-        // SuperAdmin only
+        /// <summary>
+        /// POST /v1.0.1/auth/create-user
+        /// SuperAdmin only. Password must be 8+ chars with uppercase, lowercase, digit and special char.
+        /// </summary>
         [Authorize]
         [HttpPost("create-user")]
         public async Task<IActionResult> CreateUser(CreateUserRequest request)
@@ -37,6 +59,10 @@ namespace MicroserviceHub.API.Controllers
             return Ok(new { message = "User created successfully" });
         }
 
+        /// <summary>
+        /// GET /v1.0.1/auth/users
+        /// SuperAdmin only.
+        /// </summary>
         [Authorize]
         [HttpGet("users")]
         public async Task<IActionResult> GetUsers()
