@@ -333,7 +333,7 @@ namespace MicroserviceHub.API.Application.Services
 
             var keyInfo          = await _repository.GetApiKeyById(keyId);
             var consumerUsername = $"{keyInfo.ApplicationId}_{keyInfo.Environment.Replace("-", "_").Replace(" ", "_")}";
-            var newConsumerKey   = $"{consumerUsername}_{Guid.NewGuid().ToString("N")[..8]}";
+            var newConsumerKey   = consumerUsername; // stable key — must always match APISIX consumer username
 
             await _repository.UpdateApiKeyAndSecret(keyId, newKey, newSecret);
             await _repository.UpdateConsumerKey(keyId, newConsumerKey);

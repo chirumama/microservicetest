@@ -223,7 +223,8 @@ public async Task RegisterRouteAsync(
         ""upstream_id"": ""{upstreamId}"",
         ""plugins"": {{
             ""jwt-auth"": {{
-                ""hide_credentials"": false
+                ""hide_credentials"": false,
+                ""key_claim_name"": ""key""
             }}{proxyRewritePlugin}
         }}
     }}";
