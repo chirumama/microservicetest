@@ -99,6 +99,9 @@ builder.Services.AddScoped<IAuthRepository,        AuthRepository>();
 builder.Services.AddScoped<IApplicationService,    ApplicationService>();
 builder.Services.AddScoped<IApplicationRepository, ApplicationRepository>();
 builder.Services.AddScoped<IOAuthService,          OAuthService>();
+builder.Services.AddHttpClient("apisix-admin");
+builder.Services.AddScoped<IRouteSyncService, RouteSyncService>();
+builder.Services.AddHostedService<RouteSyncBackgroundService>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

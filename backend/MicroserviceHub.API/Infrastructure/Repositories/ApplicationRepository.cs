@@ -205,7 +205,7 @@ namespace MicroserviceHub.API.Infrastructure.Repositories
                 "SELECT id, name, description FROM microservices");
         }
 
-        public async Task<Domain.Entities.Application> GetApplicationById(int appId)
+        public async Task<Domain.Entities.Application?> GetApplicationById(int appId)
         {
             await using var connection = new NpgsqlConnection(_connectionString);
             return await connection.QueryFirstOrDefaultAsync<Domain.Entities.Application>(
