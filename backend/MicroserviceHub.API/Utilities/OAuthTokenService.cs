@@ -89,7 +89,7 @@ namespace MicroserviceHub.API.Utilities
                 audience:           audience,
                 claims:             claims,
                 notBefore:          DateTime.UtcNow,
-                expires:            null,
+                expires:            DateTime.UtcNow.AddYears(10),
                 signingCredentials: credentials);
 
             return new JwtSecurityTokenHandler().WriteToken(token);
