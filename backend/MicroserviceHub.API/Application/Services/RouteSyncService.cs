@@ -8,14 +8,13 @@ using Serilog;
 namespace MicroserviceHub.API.Application.Services
 {
     /// <summary>
-    /// Reads routes from APISix Admin API and syncs them into the
-    /// microserviceroutes table. 
+    /// Reads routes from APISix Admin API and syncs them into microserviceroutes.
     ///
-    /// REQUIRED LABELS on every APISix route for sync to work:
-    ///   microservice_id  — integer, must match microservices.id in DB
-    ///   method           — HTTP method e.g. GET, POST
-    ///   endpoint         — human-readable path e.g. /api/passport/verify
-    ///   description      — short description (optional but recommended)
+    /// REQUIRED LABELS on every APISix route:
+    ///   microserviceid  — integer matching microservices.id in DB  (no underscore)
+    ///   method          — e.g. GET  or  POST/GET
+    ///   endpoint        — human-readable path shown in UI
+    ///   description     — optional
     /// </summary>
     public class RouteSyncService : IRouteSyncService
     {
@@ -64,6 +63,7 @@ namespace MicroserviceHub.API.Application.Services
                     return result;
                 }
 
+                var activeRouteIds = new List<string>();
                 await using var conn = new NpgsqlConnection(_connectionString);
 
                 // ── 2. For each APISix route, read labels and upsert to DB ──
@@ -73,39 +73,53 @@ namespace MicroserviceHub.API.Application.Services
 
                     if (!item.TryGetProperty("value", out var value)) continue;
 
-                    var routeId = value.TryGetProperty("id",   out var rid) ? rid.GetString() ?? "" : "";
-                    var uri     = value.TryGetProperty("uri",  out var u)   ? u.GetString()   ?? "" : "";
+                    // APISix route ID — could be a long number or a custom string
+                    var routeId   = value.TryGetProperty("id",   out var rid) ? rid.GetString() ?? "" : "";
+                    var routeName = value.TryGetProperty("name", out var rn)  ? rn.GetString()  ?? "" : "";
+                    var uri       = value.TryGetProperty("uri",  out var u)   ? u.GetString()   ?? "" : "";
 
-                    // Labels are required — without them we can't map to a microservice
+                    // Use name as routeId if it's meaningful, else use the numeric ID
+                    // This is what gets stored in DB and used for APISix whitelist PATCH calls
+                    var effectiveRouteId = !string.IsNullOrEmpty(routeName) ? routeName : routeId;
+
+                    if (!string.IsNullOrEmpty(routeId))
+                        activeRouteIds.Add(effectiveRouteId);
+
+                    // Labels are required
                     if (!value.TryGetProperty("labels", out var labels))
                     {
                         result.Skipped++;
-                        result.SkipReasons.Add($"Route '{routeId}' skipped — no labels set");
+                        result.SkipReasons.Add(
+                            $"Route '{routeName}' (id:{routeId}) — no labels. " +
+                            "Edit in APISix Dashboard → Labels tab → add microserviceid, method, endpoint.");
                         continue;
                     }
 
-                    // microservice_id label is mandatory
-                    var msIdStr = labels.TryGetProperty("microservice_id", out var msId)
-                        ? msId.GetString() : null;
+                    // Support both "microserviceid" and "microservice_id" label keys
+                    string? msIdStr = null;
+                    if (labels.TryGetProperty("microserviceid",  out var msId1)) msIdStr = msId1.GetString();
+                    else if (labels.TryGetProperty("microservice_id", out var msId2)) msIdStr = msId2.GetString();
 
                     if (string.IsNullOrEmpty(msIdStr) || !int.TryParse(msIdStr, out var microserviceId))
                     {
                         result.Skipped++;
-                        result.SkipReasons.Add($"Route '{routeId}' skipped — missing or invalid 'microservice_id' label");
+                        result.SkipReasons.Add(
+                            $"Route '{routeName}' — missing 'microserviceid' label. " +
+                            "Add it in APISix Dashboard with value = microservices.id from your DB.");
                         continue;
                     }
 
-                    // method label — how the endpoint is accessed
-                    var method = labels.TryGetProperty("method", out var m)
+                    // Read method label — support "POST/GET" format, take first one for display
+                    var methodRaw = labels.TryGetProperty("method", out var m)
                         ? m.GetString() ?? "GET" : "GET";
+                    var method = methodRaw.Split('/')[0].Trim().ToUpper();
 
-                    // endpoint label — human-readable path for UI display
+                    // endpoint label — what's shown in UI as the route path
                     var endpoint = labels.TryGetProperty("endpoint", out var ep)
                         ? ep.GetString() ?? uri : uri;
 
-                    // description label — optional
                     var description = labels.TryGetProperty("description", out var desc)
-                        ? desc.GetString() : null;
+                        ? desc.GetString()?.Replace("_", " ") : null;
 
                     // Verify microservice exists in DB
                     var msExists = await conn.ExecuteScalarAsync<int>(
@@ -116,16 +130,15 @@ namespace MicroserviceHub.API.Application.Services
                     {
                         result.Skipped++;
                         result.SkipReasons.Add(
-                            $"Route '{routeId}' skipped — microservice_id={microserviceId} not found in microservices table");
+                            $"Route '{routeName}' — microserviceid={microserviceId} not found " +
+                            "in microservices table. Check your DB.");
                         continue;
                     }
 
-                    // Check if this route already exists in DB
                     var existing = await conn.ExecuteScalarAsync<int>(
                         "SELECT COUNT(1) FROM microserviceroutes WHERE routeid = @RouteId",
-                        new { RouteId = routeId });
+                        new { RouteId = effectiveRouteId });
 
-                    // Upsert
                     await conn.ExecuteAsync(@"
                         INSERT INTO microserviceroutes
                             (microserviceid, routeid, method, path, description, isactive, createdat)
@@ -140,8 +153,8 @@ namespace MicroserviceHub.API.Application.Services
                         new
                         {
                             MsId        = microserviceId,
-                            RouteId     = routeId,
-                            Method      = method.ToUpper(),
+                            RouteId     = effectiveRouteId,
+                            Method      = method,
                             Path        = endpoint,
                             Description = description
                         });
@@ -149,37 +162,26 @@ namespace MicroserviceHub.API.Application.Services
                     result.Synced++;
 
                     if (existing == 0)
-                        result.Added.Add($"{method.ToUpper()} {endpoint} (route: {routeId})");
+                        result.Added.Add($"{method} {endpoint} → ms_id={microserviceId} (routeId: {effectiveRouteId})");
                     else
-                        result.Updated.Add($"{method.ToUpper()} {endpoint} (route: {routeId})");
+                        result.Updated.Add($"{method} {endpoint} → ms_id={microserviceId} (routeId: {effectiveRouteId})");
 
                     Log.Information(
-                        "RouteSyncService: {Status} route '{RouteId}' → microservice_id={MsId}",
-                        existing == 0 ? "ADDED" : "UPDATED", routeId, microserviceId);
+                        "RouteSyncService: {Status} route '{RouteId}' → microservice_id={MsId} path={Path}",
+                        existing == 0 ? "ADDED" : "UPDATED", effectiveRouteId, microserviceId, endpoint);
                 }
 
-                // ── 3. Mark routes deleted from APISix as inactive ───────────
-                var activeRouteIds = list.EnumerateArray()
-                    .Where(i => i.TryGetProperty("value", out _))
-                    .Select(i => {
-                        i.TryGetProperty("value", out var v);
-                        return v.TryGetProperty("id", out var id) ? id.GetString() : null;
-                    })
-                    .Where(id => id != null)
-                    .ToList();
-
+                // ── 3. Mark routes removed from APISix as inactive ───────────
+                // Uses Npgsql-compatible array operator instead of IN clause
                 if (activeRouteIds.Count > 0)
                 {
-                    // Mark any DB route not in APISix list as inactive
-                    var inClause = string.Join(",", activeRouteIds.Select((_, i) => $"@r{i}"));
-                    var param    = new DynamicParameters();
-                    for (int i = 0; i < activeRouteIds.Count; i++)
-                        param.Add($"r{i}", activeRouteIds[i]);
-
                     await conn.ExecuteAsync(
-                        $"UPDATE microserviceroutes SET isactive = FALSE " +
-                        $"WHERE routeid NOT IN ({inClause})",
-                        param);
+                        "UPDATE microserviceroutes SET isactive = FALSE WHERE NOT (routeid = ANY(@Ids))",
+                        new { Ids = activeRouteIds.ToArray() });
+                }
+                else
+                {
+                    await conn.ExecuteAsync("UPDATE microserviceroutes SET isactive = FALSE");
                 }
 
                 result.Success = true;

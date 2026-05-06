@@ -1,10 +1,8 @@
 using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 using MicroserviceHub.API.Application.DTOs.Request;
 using MicroserviceHub.API.Application.DTOs.Response;
 using MicroserviceHub.API.Application.Interfaces;
 using MicroserviceHub.API.Utilities;
-using Microsoft.IdentityModel.Tokens;
 using Serilog;
 
 namespace MicroserviceHub.API.Application.Services
@@ -54,55 +52,36 @@ namespace MicroserviceHub.API.Application.Services
                 throw new UnauthorizedAccessException("This key has been revoked or disabled.");
             }
 
-            // Return the stored permanent token
-            var storedToken = await _repository.GetAccessToken(keyRecord.Id);
+            // Get enabled services and consumer key from DB
+            var details = await _repository.GetApplicationDetails(keyRecord.ApplicationId);
+            var enabledServices = details.Microservices
+                .Where(m => m.IsEnabled)
+                .Select(m => m.Name)
+                .ToList();
 
-            if (storedToken == null)
-            {
-                // Fallback: generate and store if missing (older records before this feature)
-                Log.Warning("No stored token found for KeyId {Id} — generating fallback", keyRecord.Id);
+            // Read the stored consumer key — set during RegisterConsumer / Regenerate
+            var storedConsumerKey = await _repository.GetConsumerKey(keyRecord.Id);
+            var consumerKey = !string.IsNullOrEmpty(storedConsumerKey)
+                ? storedConsumerKey
+                : $"{keyRecord.ApplicationId}_{keyRecord.Environment.Replace("-", "_").Replace(" ", "_")}";
 
-                var details = await _repository.GetApplicationDetails(keyRecord.ApplicationId);
-                var enabledServices = details.Microservices
-                    .Where(m => m.IsEnabled)
-                    .Select(m => m.Name)
-                    .ToList();
+            // Always generate a FRESH token — new jti every call so APISix never rejects it
+            var freshToken = _tokenService.GeneratePermanentApiToken(
+                keyRecord.ApplicationId,
+                keyRecord.Environment,
+                consumerKey,
+                enabledServices);
 
-                var consumerUsername = $"{keyRecord.ApplicationId}_{keyRecord.Environment.Replace("-", "_").Replace(" ", "_")}";
-
-                storedToken = _tokenService.GeneratePermanentApiToken(
-                    keyRecord.ApplicationId,
-                    keyRecord.Environment,
-                    consumerUsername,
-                    enabledServices);
-
-                await _repository.SaveAccessToken(keyRecord.Id, storedToken);
-            }
-
-            var scope = GetServicesFromToken(storedToken);
-
-            Log.Information("Permanent token returned for AppId: {Id}, Env: {Env}",
-                keyRecord.ApplicationId, keyRecord.Environment);
+            Log.Information("Fresh permanent token issued for AppId: {Id}, Env: {Env}, Consumer: {CK}",
+                keyRecord.ApplicationId, keyRecord.Environment, consumerKey);
 
             return new TokenResponse
             {
-                AccessToken = storedToken,
+                AccessToken = freshToken,
                 TokenType   = "Bearer",
-                ExpiresIn   = 0,
-                Scope       = string.Join(" ", scope)
+                ExpiresIn   = _config.GetValue<int>("OAuth:ApiTokenExpiryMinutes", 60) * 60,
+                Scope       = string.Join(" ", enabledServices)
             };
-        }
-
-        private static List<string> GetServicesFromToken(string token)
-        {
-            try
-            {
-                var handler = new JwtSecurityTokenHandler();
-                var jwt     = handler.ReadJwtToken(token);
-                var services = jwt.Claims.FirstOrDefault(c => c.Type == "services")?.Value ?? "";
-                return services.Split(',').Where(s => !string.IsNullOrEmpty(s)).ToList();
-            }
-            catch { return new List<string>(); }
         }
     }
 }

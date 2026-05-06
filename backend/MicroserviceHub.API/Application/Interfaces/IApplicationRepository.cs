@@ -29,15 +29,12 @@ namespace MicroserviceHub.API.Application.Interfaces
         Task<string?> GetAccessToken(int keyId);
         Task         UpdateConsumerKey(int keyId, string newConsumerKey);
         Task<string> GetConsumerKeyByAppKey(string appKey);
+        Task<string?> GetConsumerKey(int keyId);   // ← new
 
         // Route-level access control
         Task<List<MicroserviceRouteDto>>   GetRoutesForAppAsync(int appId, int microserviceId);
         Task<List<MicroserviceRoute>>      GetMicroserviceRoutesAsync(int microserviceId);
         Task         UpsertApplicationRouteAsync(int appId, int microserviceId, string routeId, bool isEnabled);
         Task<List<string>> GetEnabledRouteIdsAsync(int appId, int microserviceId);
-         // APISix → DB sync
-    Task<int>  UpsertMicroserviceByNameAsync(string name, string description);
-    Task       UpsertMicroserviceRouteAsync(int microserviceId, string routeId,
-                   string method, string path, string description);
     }
 }

@@ -430,5 +430,12 @@ public async Task UpsertMicroserviceRouteAsync(
                     Description    = description,
                 });
         } 
+        public async Task<string?> GetConsumerKey(int keyId)
+{
+    await using var connection = new NpgsqlConnection(_connectionString);
+    return await connection.QueryFirstOrDefaultAsync<string>(
+        "SELECT consumerkey FROM apikeys WHERE id = @Id",
+        new { Id = keyId });
+}
     }
 }
