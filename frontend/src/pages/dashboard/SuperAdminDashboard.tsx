@@ -5,6 +5,13 @@ import InputField from "../../components/common/InputField";
 import { createUser, getUsers, type UserSummary } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import {
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  FormHelperText,
+} from "@mui/material";
 
 // Password must be 8+ chars with uppercase, lowercase, digit, and special char
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
@@ -14,7 +21,6 @@ const PASSWORD_HINT  =
 export default function SuperAdminDashboard() {
   const [tab, setTab] = useState<"create" | "manage">("create");
 
-  // Create user form state
   const [email, setEmail]               = useState("");
   const [password, setPassword]         = useState("");
   const [roleId, setRoleId]             = useState("");
@@ -25,7 +31,6 @@ export default function SuperAdminDashboard() {
     email?: string; password?: string; roleId?: string; api?: string;
   }>({});
 
-  // Users list state
   const [users, setUsers]               = useState<UserSummary[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
 
@@ -140,7 +145,6 @@ export default function SuperAdminDashboard() {
             onChange={(e: ChangeEvent<HTMLInputElement>) => {
               const val = e.target.value;
               setPassword(val);
-              // Live validation
               if (val && !PASSWORD_REGEX.test(val)) {
                 setErrors(p => ({ ...p, password: PASSWORD_HINT }));
               } else {
@@ -158,21 +162,25 @@ export default function SuperAdminDashboard() {
           />
           <br /><br />
 
-          <InputField
-            label="Role" value={roleId}
-            onChange={(e) => {
-              setRoleId(e.target.value);
-              if (errors.roleId) setErrors(p => ({ ...p, roleId: "" }));
-            }}
-            fullWidth required
-            error={!!errors.roleId} helperText={errors.roleId}
-            select
-            options={[
-              { label: "Select Role", value: "" },
-              { label: "User",        value: "1" },
-              { label: "Admin",       value: "2" },
-            ]}
-          />
+          {/* Role dropdown — styled to match MUI outlined InputField */}
+          <FormControl fullWidth variant="outlined" error={!!errors.roleId}>
+            <InputLabel id="role-label">Role</InputLabel>
+            <Select
+              labelId="role-label"
+              label="Role"
+              value={roleId}
+              onChange={(e) => {
+                setRoleId(e.target.value);
+                if (errors.roleId) setErrors(p => ({ ...p, roleId: "" }));
+              }}
+            >
+              <MenuItem value="1">User</MenuItem>
+              <MenuItem value="2">Admin</MenuItem>
+            </Select>
+            {errors.roleId && (
+              <FormHelperText>{errors.roleId}</FormHelperText>
+            )}
+          </FormControl>
           <br /><br />
 
           <button className="login-btn" onClick={handleCreateUser} disabled={loading}>
