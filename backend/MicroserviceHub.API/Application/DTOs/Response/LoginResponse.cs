@@ -15,9 +15,6 @@
         public string Email       { get; set; } = string.Empty;
         public bool   RequiresOtp { get; set; }
 
-        // ── Dev-only: OTP echoed back (remove / hide in production) ─────────
-        public string? Otp { get; set; }
-
         // ── Step-2 fields (populated after OTP verified) ─────────────────────
         public string? AccessToken { get; set; }
         public string  TokenType   { get; set; } = "Bearer";

@@ -94,5 +94,13 @@ namespace MicroserviceHub.API.Infrastructure.Repositories
                "UPDATE userotps SET isused = TRUE WHERE id = @Id",
                 new { otp.Id });
         }
+
+        public async Task UpdatePasswordAsync(int userId, string newPasswordHash)
+        {
+            await using var connection = new NpgsqlConnection(_connectionString);
+            await connection.ExecuteAsync(
+                "UPDATE users SET passwordhash = @Hash, updatedat = NOW() WHERE id = @Id",
+                new { Hash = newPasswordHash, Id = userId });
+        }
     }
 }

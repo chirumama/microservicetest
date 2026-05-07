@@ -42,7 +42,6 @@ export interface LoginResponse {
   role:        string;   // "User" | "Admin" | "SuperAdmin"
   email:       string;
   requiresOtp: boolean;
-  otp?:        string;   // echoed back in dev; remove in production
 }
 
 /** Step 2: Verify-OTP response — includes the JWT */
@@ -68,6 +67,20 @@ export async function verifyOtp(userId: number, otp: string): Promise<VerifyOtpR
   return request<VerifyOtpResponse>("/auth/verify-otp", {
     method: "POST",
     body: JSON.stringify({ userId, otp }),
+  });
+}
+
+export async function forgotPassword(email: string): Promise<void> {
+  return request<void>("/auth/forgot-password", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
+export async function resetPassword(email: string, otp: string, newPassword: string): Promise<void> {
+  return request<void>("/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify({ email, otp, newPassword }),
   });
 }
 

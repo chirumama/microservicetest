@@ -4,26 +4,31 @@ import { useAuth } from "../../context/AuthContext";
 import { FaEnvelope, FaLock } from "react-icons/fa";
 import { IoEyeOutline, IoEyeOffOutline } from "react-icons/io5";
 import InputField from "../../components/common/InputField";
-import { login as apiLogin, verifyOtp } from "../../services/api";
+import { login as apiLogin, verifyOtp, forgotPassword, resetPassword } from "../../services/api";
 
 export default function Login() {
-  const [email, setEmail]       = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading]   = useState(false);
-  const [errors, setErrors]     = useState<{ email?: string; password?: string; api?: string }>({});
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
-  // OTP step state
-  const [step, setStep] = useState<"login" | "otp">("login");
-  const [otp, setOtp]   = useState<string[]>(["", "", "", "", "", ""]);
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<{ email?: string; password?: string; api?: string }>({});
+
+  const [step, setStep] = useState<"login" | "otp" | "forgot-email" | "forgot-otp" | "reset-password">("login");
+
+  const [otp, setOtp] = useState<string[]>(["", "", "", "", "", ""]);
 
   const { login } = useAuth();
-  const navigate  = useNavigate();
+  const navigate = useNavigate();
+
+  const getOtp = () => otp.join("");
 
   // ── Step 1: credential login ──────────────────────────────────────────────
   const handleLogin = async () => {
     const newErrors: typeof errors = {};
-    if (!email.trim())    newErrors.email    = "Email is required";
+    if (!email.trim()) newErrors.email = "Email is required";
     if (!password.trim()) newErrors.password = "Password is required";
     if (Object.keys(newErrors).length) { setErrors(newErrors); return; }
 
@@ -33,12 +38,9 @@ export default function Login() {
       const result = await apiLogin(email, password);
 
       if (result.requiresOtp) {
-        // Dev convenience: OTP is echoed back in result.otp
-        console.log("OTP (dev only):", result.otp);
         localStorage.setItem("tempUser", JSON.stringify(result));
         setStep("otp");
       } else {
-        // Fallback: no OTP required (shouldn't happen with current backend)
         login(result.userId, result.roleId, result.role, result.email);
         navigate(result.role === "SuperAdmin" ? "/superadmin-dashboard" : "/dashboard");
       }
@@ -66,23 +68,58 @@ export default function Login() {
     }
   };
 
-  // ── Step 2: OTP verification → JWT issued ─────────────────────────────────
+  // ── Step 2: OTP verification → JWT issued ────────────────────────────────
   const handleVerifyOtp = async () => {
-    const enteredOtp = otp.join("");
-    const tempUser   = JSON.parse(localStorage.getItem("tempUser") || "{}");
+    const tempUser = JSON.parse(localStorage.getItem("tempUser") || "{}");
 
     try {
-      const result = await verifyOtp(tempUser.userId, enteredOtp);
+      const result = await verifyOtp(tempUser.userId, getOtp());
 
-      // Store JWT returned from verify-otp
       localStorage.setItem("accessToken", result.accessToken);
       localStorage.removeItem("tempUser");
 
       login(result.userId, result.roleId, result.role, result.email);
-
       navigate(result.role === "SuperAdmin" ? "/superadmin-dashboard" : "/dashboard");
     } catch (err: unknown) {
       setErrors({ api: err instanceof Error ? err.message : "Invalid or expired OTP" });
+    }
+  };
+
+  // ── Forgot password: send OTP to email ───────────────────────────────────
+  const handleSendOtp = async () => {
+    setLoading(true);
+    try {
+      await forgotPassword(email);
+      setStep("forgot-otp");
+    } catch (err: unknown) {
+      setErrors({ api: err instanceof Error ? err.message : "Failed to send OTP. Check that the email is registered." });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ── Forgot password: verify OTP → go to reset ────────────────────────────
+  const handleVerifyForgotOtp = () => {
+    // We don't verify separately — the OTP is sent along with resetPassword
+    setStep("reset-password");
+  };
+
+  // ── Forgot password: reset password ──────────────────────────────────────
+  const handleResetPassword = async () => {
+    setLoading(true);
+    try {
+      await resetPassword(email, getOtp(), newPassword);
+      setStep("login");
+      setEmail("");
+      setPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setOtp(["", "", "", "", "", ""]);
+      setErrors({});
+    } catch (err: unknown) {
+      setErrors({ api: err instanceof Error ? err.message : "Failed to reset password" });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -97,17 +134,14 @@ export default function Login() {
           </div>
         )}
 
-        {/* ── Step 1: Email + Password ── */}
+        {/* LOGIN */}
         {step === "login" && (
           <>
             <InputField
               label="Email"
               type="email"
               value={email}
-              onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                setEmail(e.target.value);
-                if (errors.email) setErrors(p => ({ ...p, email: "" }));
-              }}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
               placeholder="Enter email..."
               fullWidth
               error={!!errors.email}
@@ -120,10 +154,7 @@ export default function Login() {
               label="Password"
               type={showPassword ? "text" : "password"}
               value={password}
-              onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                setPassword(e.target.value);
-                if (errors.password) setErrors(p => ({ ...p, password: "" }));
-              }}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
               placeholder="Enter password..."
               fullWidth
               error={!!errors.password}
@@ -140,14 +171,25 @@ export default function Login() {
             <button className="login-btn" onClick={handleLogin} disabled={loading}>
               {loading ? "Logging in..." : "Login"}
             </button>
+
+            <p
+              className="text-center mt-3"
+              style={{ fontSize: 15, color: "#2f5ec3", cursor: "pointer" }}
+              onClick={() => {
+                setStep("forgot-email");
+                setErrors({});
+              }}
+            >
+              Forgot password?
+            </p>
           </>
         )}
 
-        {/* ── Step 2: OTP Entry ── */}
-        {step === "otp" && (
+        {/* OTP (login OTP + forgot-otp share same UI) */}
+        {(step === "otp" || step === "forgot-otp") && (
           <>
             <p className="text-center text-muted mb-3" style={{ fontSize: 14 }}>
-              Enter the 6-digit OTP sent to your registered contact.
+              Enter the 6-digit OTP sent to your registered email.
             </p>
 
             <div className="d-flex justify-content-center gap-2 mb-4">
@@ -176,19 +218,135 @@ export default function Login() {
 
             <button
               className="login-btn"
-              onClick={handleVerifyOtp}
-              disabled={otp.join("").length !== 6}
+              onClick={step === "otp" ? handleVerifyOtp : handleVerifyForgotOtp}
+              disabled={otp.join("").length !== 6 || loading}
             >
-              Verify OTP
+              {loading ? "Verifying..." : "Verify OTP"}
             </button>
 
             <p
               className="text-center mt-3"
-              style={{ fontSize: 13, color: "#667085", cursor: "pointer" }}
-              onClick={() => { setStep("login"); setOtp(["","","","","",""]); setErrors({}); }}
+              style={{ fontSize: 15, color: "#2f5ec3", cursor: "pointer" }}
+              onClick={() => {
+                setStep("login");
+                setOtp(["", "", "", "", "", ""]);
+                setErrors({});
+              }}
             >
               ← Back to Login
             </p>
+          </>
+        )}
+
+        {/* FORGOT EMAIL */}
+        {step === "forgot-email" && (
+          <>
+            <InputField
+              label="Email"
+              type="email"
+              value={email}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                setEmail(e.target.value);
+                if (errors.email) setErrors(p => ({ ...p, email: "" }));
+              }}
+              placeholder="Enter email..."
+              fullWidth
+              error={!!errors.email}
+              helperText={errors.email}
+              startIcon={<FaEnvelope style={{ color: "gray" }} />}
+            />
+            <br /><br />
+
+            <button
+              className="login-btn"
+              onClick={() => {
+                if (!email.trim()) {
+                  setErrors({ email: "Email is required" });
+                  return;
+                }
+                setErrors({});
+                handleSendOtp();
+              }}
+              disabled={loading}
+            >
+              {loading ? "Sending OTP..." : "Send OTP"}
+            </button>
+
+            <p
+              className="text-center mt-3"
+              style={{ fontSize: 15, color: "#2f5ec3", cursor: "pointer" }}
+              onClick={() => setStep("login")}
+            >
+              ← Back to Login
+            </p>
+          </>
+        )}
+
+        {/* RESET PASSWORD */}
+        {step === "reset-password" && (
+          <>
+            <InputField
+              label="New Password"
+              type={showPassword ? "text" : "password"}
+              value={newPassword}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                setNewPassword(e.target.value);
+                if (errors.password) setErrors(p => ({ ...p, password: "" }));
+              }}
+              fullWidth
+              error={!!errors.password}
+              helperText={errors.password}
+              startIcon={<FaLock style={{ color: "gray" }} />}
+              endIcon={
+                <span onClick={() => setShowPassword(!showPassword)} style={{ cursor: "pointer" }}>
+                  {showPassword ? <IoEyeOutline /> : <IoEyeOffOutline />}
+                </span>
+              }
+            />
+            <br /><br />
+
+            <InputField
+              label="Confirm Password"
+              type={showPassword ? "text" : "password"}
+              value={confirmPassword}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                setConfirmPassword(e.target.value);
+                if (errors.api) setErrors(p => ({ ...p, api: "" }));
+              }}
+              fullWidth
+              error={!!errors.api}
+              helperText={errors.api}
+              startIcon={<FaLock style={{ color: "gray" }} />}
+              endIcon={
+                <span onClick={() => setShowPassword(!showPassword)} style={{ cursor: "pointer" }}>
+                  {showPassword ? <IoEyeOutline /> : <IoEyeOffOutline />}
+                </span>
+              }
+            />
+            <br /><br />
+
+            <button
+              className="login-btn"
+              onClick={() => {
+                if (!newPassword.trim()) {
+                  setErrors({ password: "New password is required" });
+                  return;
+                }
+                if (!confirmPassword.trim()) {
+                  setErrors({ api: "Confirm password is required" });
+                  return;
+                }
+                if (newPassword !== confirmPassword) {
+                  setErrors({ api: "Passwords do not match" });
+                  return;
+                }
+                setErrors({});
+                handleResetPassword();
+              }}
+              disabled={loading}
+            >
+              {loading ? "Resetting..." : "Set New Password"}
+            </button>
           </>
         )}
       </div>

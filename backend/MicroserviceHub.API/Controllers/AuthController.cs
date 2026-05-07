@@ -45,6 +45,29 @@ namespace MicroserviceHub.API.Controllers
         }
 
         /// <summary>
+        /// POST /v1.0.1/auth/forgot-password
+        /// Sends a password-reset OTP to the user's registered email.
+        /// </summary>
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+        {
+            await _authService.ForgotPasswordAsync(request.Email);
+            // Always return 200 to avoid email enumeration
+            return Ok(new { message = "If this email is registered, an OTP has been sent." });
+        }
+
+        /// <summary>
+        /// POST /v1.0.1/auth/reset-password
+        /// Verifies the OTP and sets a new password.
+        /// </summary>
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+        {
+            await _authService.ResetPasswordAsync(request);
+            return Ok(new { message = "Password reset successfully." });
+        }
+
+        /// <summary>
         /// POST /v1.0.1/auth/create-user
         /// SuperAdmin only. Password must be 8+ chars with uppercase, lowercase, digit and special char.
         /// </summary>

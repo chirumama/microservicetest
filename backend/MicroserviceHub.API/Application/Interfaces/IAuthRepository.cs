@@ -10,6 +10,7 @@ namespace MicroserviceHub.API.Application.Interfaces
         Task CreateUser(CreateUserRequest request);
         Task<List<UserSummaryResponse>> GetAllUsers();
         Task SetUserActive(int userId, bool isActive);
+        Task UpdatePasswordAsync(int userId, string newPasswordHash);
 
         // OTP methods
         Task SaveOtpAsync(UserOtp otp);

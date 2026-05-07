@@ -10,6 +10,10 @@ namespace MicroserviceHub.API.Application.Interfaces
         Task<List<UserSummaryResponse>> GetUsersAsync();
 
         Task<string> GenerateOtpAsync(int userId);
-        Task<LoginResponse> VerifyOtpAsync(VerifyOtpRequest request);  // ← this line is what's missing
+        Task<LoginResponse> VerifyOtpAsync(VerifyOtpRequest request);
+
+        // Forgot / Reset password
+        Task ForgotPasswordAsync(string email);
+        Task ResetPasswordAsync(ResetPasswordRequest request);
     }
 }

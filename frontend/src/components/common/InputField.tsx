@@ -12,12 +12,11 @@ interface InputFieldProps {
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   placeholder?: string;
   fullWidth?: boolean;
-  required?: boolean;        // ← add this line
+  required?: boolean;
   error?: boolean;
   helperText?: string;
   startIcon?: React.ReactNode;
   endIcon?: React.ReactNode;
-  
   select?: boolean;
   options?: { value: string; label: string }[];
 }
@@ -42,16 +41,19 @@ const InputField: React.FC<InputFieldProps> = ({
       label={label}
       value={value}
       onChange={onChange}
-      type={select ? undefined : type} // ✅ important
+      type={select ? undefined : type}
       placeholder={placeholder}
       fullWidth={fullWidth}
       error={error}
-      required={required} 
+      required={required}
       helperText={helperText}
       variant="outlined"
       select={select}
       SelectProps={{
-        displayEmpty: true, // ✅ shows placeholder
+        displayEmpty: true,
+      }}
+      inputProps={{
+        pattern: ".*",
       }}
       InputProps={{
         startAdornment: startIcon ? (
