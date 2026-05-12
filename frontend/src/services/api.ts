@@ -221,3 +221,25 @@ export async function updateRouteAccess(
     body: JSON.stringify({ routes }),
   });
 }
+// Add to src/services/api.ts
+
+export interface GatewayTokenResponse {
+  access_token: string;
+  token_type: string;
+  expires_in: number;
+  scope: string;
+}
+
+export async function getGatewayToken(
+  clientId: string,
+  clientSecret: string
+): Promise<GatewayTokenResponse> {
+  return request<GatewayTokenResponse>("/oauth/token", {
+    method: "POST",
+    body: JSON.stringify({
+      grant_type: "client_credentials",
+      client_id: clientId,
+      client_secret: clientSecret,
+    }),
+  });
+}
