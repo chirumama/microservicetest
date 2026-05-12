@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 import CreateApplicationModal from "./CreateApplication";
 import { FiSettings, FiPlus } from "react-icons/fi";
+import NavBar from "../../components/common/NavBar";
 import { getApplications, type ApplicationSummary } from "../../services/api";
 
 export default function ManageApplications() {
@@ -10,6 +12,7 @@ export default function ManageApplications() {
   const [apps, setApps] = useState<ApplicationSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  
 
   const fetchApps = async () => {
     setLoading(true);
@@ -23,11 +26,19 @@ export default function ManageApplications() {
       setLoading(false);
     }
   };
+  
+  const { user } = useAuth();
+
+  // Username from email
+  const username =
+    user?.email?.split("@")[0] || "User";
 
   useEffect(() => { fetchApps(); }, []);
 
   return (
-    <div className="container mt-4">
+    <>
+    <NavBar username={username}/>
+    <div className="container">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
           <button
@@ -45,7 +56,7 @@ export default function ManageApplications() {
           className="btn text-white d-flex align-items-center"
           style={{
             borderRadius: "10px", padding: "10px 18px",
-            background: "linear-gradient(135deg, #4c7df0, #2d6cdf)",
+            background: "#667eea",
             border: "none", gap: "6px",
           }}
           onClick={() => setShowModal(true)}
@@ -71,7 +82,7 @@ export default function ManageApplications() {
             <button
               className="d-flex align-items-center justify-content-center text-white mx-auto"
               style={{
-                borderRadius: "10px", background: "linear-gradient(135deg, #4c7df0, #2d6cdf)",
+                borderRadius: "10px", background: "#667eea",
                 border: "none", padding: "10px 18px", fontWeight: "400", gap: "6px",
               }}
               onClick={() => setShowModal(true)}
@@ -114,7 +125,7 @@ export default function ManageApplications() {
                     onClick={() => navigate(`/manage/${app.id}`)}
                     className="w-100 d-flex align-items-center justify-content-center text-white"
                     style={{
-                      borderRadius: "10px", background: "linear-gradient(135deg, #4c7df0, #2d6cdf)",
+                      borderRadius: "10px", background: "#667eea",
                       border: "none", padding: "10px", fontWeight: "500", gap: "6px",
                     }}
                   >
@@ -133,5 +144,6 @@ export default function ManageApplications() {
         onCreated={() => { setShowModal(false); fetchApps(); }}
       />
     </div>
+    </>
   );
 }

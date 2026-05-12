@@ -85,7 +85,7 @@
 /* Background container */
 .dashboard-container {
   padding: 40px;
-  background: linear-gradient(135deg, #2d6cdf, #1e4bb8);
+  background: linear-gradient(-135deg, #e8ebf3, #1e4bb8);
   min-height: 100vh;
   color: #fff;
 }

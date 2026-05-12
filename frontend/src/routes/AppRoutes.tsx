@@ -3,8 +3,10 @@ import Login from "../pages/auth/Login";
 import Dashboard from "../pages/dashboard/Dashboard";
 import CreateApplication from "../pages/applications/CreateApplication";
 import ManageApplications from "../pages/applications/ManageApplications";
-import ApplicationDetails from "../pages/applications/ApplicationDetails";
+import ApplicationDetails from "../pages/applications/ApplicationDetails";``
 import SuperAdminDashboard from "../pages/dashboard/SuperAdminDashboard";
+import ViewDetail from "../pages/applications/ViewDetail";
+// import ViewDetails from "../pages/applications/ViewDetails";
 import { useAuth } from "../context/AuthContext";
 
 
@@ -26,6 +28,14 @@ export default function AppRoutes(){
         <Route path="/create" element={<ProtectedRoute><CreateApplication show={true} onClose={() => {}} /></ProtectedRoute>} />
         <Route path="/manage" element={<ProtectedRoute><ManageApplications /></ProtectedRoute>} />
         <Route path="/manage/:id" element={<ProtectedRoute><ApplicationDetails /></ProtectedRoute>} />
+        <Route
+  path="/microservice/:id"
+  element={<ViewDetail />}
+  />
+        {/* <Route
+  path="/microservice/:id"
+  element={<ViewDetails />}
+/> */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
