@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { FaChevronDown, FaArrowLeft, FaKey, FaCheckCircle } from "react-icons/fa";
+import { FaChevronDown, FaArrowLeft, FaCheckCircle } from "react-icons/fa";
 
 import NavBar from "../../components/common/NavBar";
 import { useAuth } from "../../context/AuthContext";
@@ -212,8 +212,7 @@ export default function ViewDetail() {
               /* ── Unauthenticated state ── */
               <>
                 <div className="d-flex align-items-center gap-2 mb-2">
-                  <FaKey size={16} color="#d97706" />
-                  <span style={{ fontWeight: 600, color: "#92400e" }}>
+                  <span style={{ fontWeight: 600, color: "#000000" }}>
                     Gateway Authentication Required
                   </span>
                 </div>
@@ -420,7 +419,7 @@ export default function ViewDetail() {
                         color: "#92400e",
                       }}
                     >
-                      ⚠️ Authenticate via the banner above before testing.
+                      Authenticate via the banner above before testing.
                     </div>
                   )}
 
