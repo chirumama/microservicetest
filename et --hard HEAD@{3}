@@ -1,0 +1,22 @@
+[33m4196efc[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mshreya[m[33m, [m[1;31morigin/shreya[m[33m)[m HEAD@{0}: checkout: moving from main to shreya
+[33m3606aa9[m[33m ([m[1;32mmain[m[33m)[m HEAD@{1}: commit: new dashboard
+[33m75e7e79[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m HEAD@{2}: pull origin main: Fast-forward
+[33mb19f744[m HEAD@{3}: reset: moving to HEAD
+[33mb19f744[m HEAD@{4}: checkout: moving from main to main
+[33mb19f744[m HEAD@{5}: reset: moving to HEAD
+[33mb19f744[m HEAD@{6}: pull origin main: Fast-forward
+[33m3eff512[m HEAD@{7}: reset: moving to HEAD
+[33m3eff512[m HEAD@{8}: checkout: moving from shreya to main
+[33m4196efc[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mshreya[m[33m, [m[1;31morigin/shreya[m[33m)[m HEAD@{9}: reset: moving to HEAD
+[33m4196efc[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mshreya[m[33m, [m[1;31morigin/shreya[m[33m)[m HEAD@{10}: checkout: moving from main to shreya
+[33m3eff512[m HEAD@{11}: pull origin main: Fast-forward
+[33m83058f0[m[33m ([m[1;32myogesh[m[33m)[m HEAD@{12}: checkout: moving from shreya to main
+[33m4196efc[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mshreya[m[33m, [m[1;31morigin/shreya[m[33m)[m HEAD@{13}: commit: login changes
+[33m83058f0[m[33m ([m[1;32myogesh[m[33m)[m HEAD@{14}: checkout: moving from yogesh to shreya
+[33m83058f0[m[33m ([m[1;32myogesh[m[33m)[m HEAD@{15}: reset: moving to origin/main
+[33m8b08855[m[33m ([m[1;31morigin/yogesh[m[33m)[m HEAD@{16}: reset: moving to HEAD
+[33m8b08855[m[33m ([m[1;31morigin/yogesh[m[33m)[m HEAD@{17}: commit: otp verification integrate
+[33ma3c7eb5[m HEAD@{18}: commit: otp verification
+[33m585ea2c[m HEAD@{19}: rebase (abort): returning to refs/heads/yogesh
+[33ma39b450[m HEAD@{20}: pull origin yogesh --rebase (start): checkout a39b45049139c816aef341f19a058d40f047cd75
+[33m585ea2c[m HEAD@{21}: commit (initial): add password policy
