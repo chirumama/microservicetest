@@ -118,242 +118,242 @@ export default function SuperAdminDashboard() {
   };
 
   const tabBtn = (active: boolean) =>
-    ({
-      borderRadius: 10,
-      padding: "8px 28px",
-      background: active
-        ? "linear-gradient(135deg,#4c7df0,#2d6cdf)"
-        : "#f3f3f3",
-      color: active ? "#fff" : "#333",
-      border: "none",
-      fontWeight: 500,
-      cursor: "pointer",
-    } as React.CSSProperties);
+  ({
+    borderRadius: 10,
+    padding: "8px 28px",
+    background: active
+      ? "linear-gradient(135deg,#4c7df0,#2d6cdf)"
+      : "#f3f3f3",
+    color: active ? "#fff" : "#333",
+    border: "none",
+    fontWeight: 500,
+    cursor: "pointer",
+  } as React.CSSProperties);
 
   // Dummy access logs data
   const accessLogs = [
-  {
-    id: 1,
-    timestamp: "14 May 2026, 12:11:10",
-    actor: "shreyaraut061@gmail.com",
-    role: "Admin",
-    service: "Pan Service",
-    method: "POST",
-    endpoint: "/api/v1/pan/verify",
-    appId: "lending-app-v1",
-    status: "200",
-    outcome: "SUCCESS",
-    latency: "200ms",
-    fields: "4 fields",
-    type: "success",
-    responseFields: [
-      "id_number",
-      "full_name",
-      "pan_status",
-      "timestamp",
-    ],
-  },
+    {
+      id: 1,
+      timestamp: "14 May 2026, 12:11:10",
+      actor: "shreyaraut061@gmail.com",
+      role: "Admin",
+      service: "Pan Service",
+      method: "POST",
+      endpoint: "/api/v1/pan/verify",
+      appId: "lending-app-v1",
+      status: "200",
+      outcome: "SUCCESS",
+      latency: "200ms",
+      fields: "4 fields",
+      type: "success",
+      responseFields: [
+        "id_number",
+        "full_name",
+        "pan_status",
+        "timestamp",
+      ],
+    },
 
-  {
-    id: 2,
-    timestamp: "14 May 2026, 12:09:48",
-    actor: "shreyaraut061@gmail.com",
-    role: "Admin",
-    service: "Pan Service",
-    method: "GET",
-    endpoint: "/api/v1/pan/health",
-    appId: "gateway-v1",
-    status: "200",
-    outcome: "SUCCESS",
-    latency: "74ms",
-    fields: "2 fields",
-    type: "success",
-    responseFields: [
-      "service_status",
-      "timestamp",
-    ],
-  },
+    {
+      id: 2,
+      timestamp: "14 May 2026, 12:09:48",
+      actor: "shreyaraut061@gmail.com",
+      role: "Admin",
+      service: "Pan Service",
+      method: "GET",
+      endpoint: "/api/v1/pan/health",
+      appId: "gateway-v1",
+      status: "200",
+      outcome: "SUCCESS",
+      latency: "74ms",
+      fields: "2 fields",
+      type: "success",
+      responseFields: [
+        "service_status",
+        "timestamp",
+      ],
+    },
 
-  {
-    id: 3,
-    timestamp: "14 May 2026, 12:08:31",
-    actor: "admin@example.com",
-    role: "Admin",
-    service: "Passport Service",
-    method: "POST",
-    endpoint: "/api/passport/verify",
-    appId: "passport-app-v1",
-    status: "201",
-    outcome: "SUCCESS",
-    latency: "371ms",
-    fields: "5 fields",
-    type: "success",
-    responseFields: [
-      "file_number",
-      "passport_status",
-      "citizenship",
-      "full_name",
-      "timestamp",
-    ],
-  },
+    {
+      id: 3,
+      timestamp: "14 May 2026, 12:08:31",
+      actor: "admin@example.com",
+      role: "Admin",
+      service: "Passport Service",
+      method: "POST",
+      endpoint: "/api/passport/verify",
+      appId: "passport-app-v1",
+      status: "201",
+      outcome: "SUCCESS",
+      latency: "371ms",
+      fields: "5 fields",
+      type: "success",
+      responseFields: [
+        "file_number",
+        "passport_status",
+        "citizenship",
+        "full_name",
+        "timestamp",
+      ],
+    },
 
-  {
-    id: 4,
-    timestamp: "14 May 2026, 12:07:20",
-    actor: "admin@example.com",
-    role: "Admin",
-    service: "Passport Service",
-    method: "GET",
-    endpoint: "/api/passport/health/db",
-    appId: "passport-app-v1",
-    status: "200",
-    outcome: "SUCCESS",
-    latency: "98ms",
-    fields: "2 fields",
-    type: "success",
-    responseFields: [
-      "database_status",
-      "timestamp",
-    ],
-  },
+    {
+      id: 4,
+      timestamp: "14 May 2026, 12:07:20",
+      actor: "admin@example.com",
+      role: "Admin",
+      service: "Passport Service",
+      method: "GET",
+      endpoint: "/api/passport/health/db",
+      appId: "passport-app-v1",
+      status: "200",
+      outcome: "SUCCESS",
+      latency: "98ms",
+      fields: "2 fields",
+      type: "success",
+      responseFields: [
+        "database_status",
+        "timestamp",
+      ],
+    },
 
-  {
-    id: 5,
-    timestamp: "14 May 2026, 12:05:53",
-    actor: "admin@example.com",
-    role: "Admin",
-    service: "GST Service",
-    method: "POST",
-    endpoint: "/api/gst/verify",
-    appId: "gst-app-v1",
-    status: "200",
-    outcome: "SUCCESS",
-    latency: "240ms",
-    fields: "4 fields",
-    type: "success",
-    responseFields: [
-      "gstin",
-      "business_name",
-      "gst_status",
-      "timestamp",
-    ],
-  },
+    {
+      id: 5,
+      timestamp: "14 May 2026, 12:05:53",
+      actor: "admin@example.com",
+      role: "Admin",
+      service: "GST Service",
+      method: "POST",
+      endpoint: "/api/gst/verify",
+      appId: "gst-app-v1",
+      status: "200",
+      outcome: "SUCCESS",
+      latency: "240ms",
+      fields: "4 fields",
+      type: "success",
+      responseFields: [
+        "gstin",
+        "business_name",
+        "gst_status",
+        "timestamp",
+      ],
+    },
 
-  {
-    id: 6,
-    timestamp: "14 May 2026, 12:04:12",
-    actor: "user@example.com",
-    role: "User",
-    service: "GST Service",
-    method: "GET",
-    endpoint: "/api/gst/health",
-    appId: "gst-app-v1",
-    status: "200",
-    outcome: "SUCCESS",
-    latency: "61ms",
-    fields: "2 fields",
-    type: "success",
-    responseFields: [
-      "service_status",
-      "timestamp",
-    ],
-  },
+    {
+      id: 6,
+      timestamp: "14 May 2026, 12:04:12",
+      actor: "user@example.com",
+      role: "User",
+      service: "GST Service",
+      method: "GET",
+      endpoint: "/api/gst/health",
+      appId: "gst-app-v1",
+      status: "200",
+      outcome: "SUCCESS",
+      latency: "61ms",
+      fields: "2 fields",
+      type: "success",
+      responseFields: [
+        "service_status",
+        "timestamp",
+      ],
+    },
 
-  {
-    id: 7,
-    timestamp: "14 May 2026, 12:03:40",
-    actor: "user@example.com",
-    role: "User",
-    service: "IP Lookup Service",
-    method: "GET",
-    endpoint: "/v1/iplookup/8.8.8.8",
-    appId: "network-app-v1",
-    status: "200",
-    outcome: "SUCCESS",
-    latency: "110ms",
-    fields: "5 fields",
-    type: "success",
-    responseFields: [
-      "ip",
-      "city",
-      "country",
-      "isp",
-      "timestamp",
-    ],
-  },
+    {
+      id: 7,
+      timestamp: "14 May 2026, 12:03:40",
+      actor: "user@example.com",
+      role: "User",
+      service: "IP Lookup Service",
+      method: "GET",
+      endpoint: "/v1/iplookup/8.8.8.8",
+      appId: "network-app-v1",
+      status: "200",
+      outcome: "SUCCESS",
+      latency: "110ms",
+      fields: "5 fields",
+      type: "success",
+      responseFields: [
+        "ip",
+        "city",
+        "country",
+        "isp",
+        "timestamp",
+      ],
+    },
 
-  {
-    id: 8,
-    timestamp: "14 May 2026, 12:02:10",
-    actor: "shreyaraut061@gmail.com",
-    role: "Admin",
-    service: "Pan Service",
-    method: "POST",
-    endpoint: "/api/v1/pan/verify",
-    appId: "lending-app-v1",
-    status: "--",
-    outcome: "ERROR",
-    latency: "2738ms",
-    fields: "0",
-    type: "error",
-    errorMessage:
-      "PAN verification failed due to invalid PAN number.",
-  },
+    {
+      id: 8,
+      timestamp: "14 May 2026, 12:02:10",
+      actor: "shreyaraut061@gmail.com",
+      role: "Admin",
+      service: "Pan Service",
+      method: "POST",
+      endpoint: "/api/v1/pan/verify",
+      appId: "lending-app-v1",
+      status: "--",
+      outcome: "ERROR",
+      latency: "2738ms",
+      fields: "0",
+      type: "error",
+      errorMessage:
+        "PAN verification failed due to invalid PAN number.",
+    },
 
-  {
-    id: 9,
-    timestamp: "14 May 2026, 12:01:36",
-    actor: "admin@example.com",
-    role: "Admin",
-    service: "Passport Service",
-    method: "POST",
-    endpoint: "/api/passport/verify",
-    appId: "passport-app-v1",
-    status: "--",
-    outcome: "ERROR",
-    latency: "2330ms",
-    fields: "0",
-    type: "error",
-    errorMessage:
-      "Passport service timeout. Please try again later.",
-  },
+    {
+      id: 9,
+      timestamp: "14 May 2026, 12:01:36",
+      actor: "admin@example.com",
+      role: "Admin",
+      service: "Passport Service",
+      method: "POST",
+      endpoint: "/api/passport/verify",
+      appId: "passport-app-v1",
+      status: "--",
+      outcome: "ERROR",
+      latency: "2330ms",
+      fields: "0",
+      type: "error",
+      errorMessage:
+        "Passport service timeout. Please try again later.",
+    },
 
-  {
-    id: 10,
-    timestamp: "14 May 2026, 11:59:58",
-    actor: "user@example.com",
-    role: "User",
-    service: "GST Service",
-    method: "POST",
-    endpoint: "/api/gst/verify",
-    appId: "gst-app-v1",
-    status: "--",
-    outcome: "ERROR",
-    latency: "1840ms",
-    fields: "0",
-    type: "error",
-    errorMessage:
-      "GSTIN not found in government records.",
-  },
+    {
+      id: 10,
+      timestamp: "14 May 2026, 11:59:58",
+      actor: "user@example.com",
+      role: "User",
+      service: "GST Service",
+      method: "POST",
+      endpoint: "/api/gst/verify",
+      appId: "gst-app-v1",
+      status: "--",
+      outcome: "ERROR",
+      latency: "1840ms",
+      fields: "0",
+      type: "error",
+      errorMessage:
+        "GSTIN not found in government records.",
+    },
 
-  {
-    id: 11,
-    timestamp: "14 May 2026, 11:58:42",
-    actor: "user@example.com",
-    role: "User",
-    service: "IP Lookup Service",
-    method: "GET",
-    endpoint: "/v1/iplookup/256.256.256.256",
-    appId: "network-app-v1",
-    status: "--",
-    outcome: "ERROR",
-    latency: "430ms",
-    fields: "0",
-    type: "error",
-    errorMessage:
-      "Invalid IP address format.",
-  },
-];
+    {
+      id: 11,
+      timestamp: "14 May 2026, 11:58:42",
+      actor: "user@example.com",
+      role: "User",
+      service: "IP Lookup Service",
+      method: "GET",
+      endpoint: "/v1/iplookup/256.256.256.256",
+      appId: "network-app-v1",
+      status: "--",
+      outcome: "ERROR",
+      latency: "430ms",
+      fields: "0",
+      type: "error",
+      errorMessage:
+        "Invalid IP address format.",
+    },
+  ];
 
   return (
     <div className="container mt-4">
@@ -616,14 +616,14 @@ export default function SuperAdminDashboard() {
                               u.role === "SuperAdmin"
                                 ? "#e8d5ff"
                                 : u.role === "Admin"
-                                ? "#d1e8ff"
-                                : "#d1f7dc",
+                                  ? "#d1e8ff"
+                                  : "#d1f7dc",
                             color:
                               u.role === "SuperAdmin"
                                 ? "#6b21a8"
                                 : u.role === "Admin"
-                                ? "#1e40af"
-                                : "#1e7e34",
+                                  ? "#1e40af"
+                                  : "#1e7e34",
                           }}
                         >
                           {u.role}
@@ -706,14 +706,15 @@ export default function SuperAdminDashboard() {
             <div>
               <h2
                 style={{
-                  fontWeight: 700,
+                  fontWeight: 600,
+                  fontSize: 30,
                   marginBottom: 4,
                 }}
               >
                 Access Logs
               </h2>
 
-              <p
+              {/* <p
                 style={{
                   color: "#667085",
                   fontSize: 14,
@@ -721,7 +722,7 @@ export default function SuperAdminDashboard() {
                 }}
               >
                 UIDAI-compliant · field names only · no Aadhaar data stored
-              </p>
+              </p> */}
             </div>
 
             <div className="d-flex gap-2">
@@ -1010,12 +1011,12 @@ export default function SuperAdminDashboard() {
                         style={{
                           color:
                             log.status ===
-                            "200"
+                              "200"
                               ? "#15803d"
                               : log.status ===
                                 "201"
-                              ? "#15803d"
-                              : "#dc2626",
+                                ? "#15803d"
+                                : "#dc2626",
                           fontWeight: 600,
                         }}
                       >
@@ -1032,12 +1033,12 @@ export default function SuperAdminDashboard() {
                             fontWeight: 700,
                             background:
                               log.outcome ===
-                              "SUCCESS"
+                                "SUCCESS"
                                 ? "#dcfce7"
                                 : "#fee2e2",
                             color:
                               log.outcome ===
-                              "SUCCESS"
+                                "SUCCESS"
                                 ? "#15803d"
                                 : "#dc2626",
                           }}
@@ -1050,7 +1051,7 @@ export default function SuperAdminDashboard() {
                         style={{
                           color:
                             log.outcome ===
-                            "ERROR"
+                              "ERROR"
                               ? "#dc2626"
                               : "#111827",
                         }}
@@ -1062,7 +1063,7 @@ export default function SuperAdminDashboard() {
                         style={{
                           color:
                             log.outcome ===
-                            "ERROR"
+                              "ERROR"
                               ? "#dc2626"
                               : "#667085",
                         }}
@@ -1085,58 +1086,146 @@ export default function SuperAdminDashboard() {
                                     "#fff",
                                 }}
                               >
-                                <h6
+                                <div
                                   style={{
-                                    color:
-                                      "#98A2B3",
-                                    fontWeight: 700,
-                                    marginBottom: 20,
+                                    padding: "16px 0",
+                                    fontFamily: "Inter, sans-serif",
                                   }}
                                 >
-                                  IDENTIFIERS
-                                </h6>
+                                  <h6
+                                    style={{
+                                      color: "#98A2B3",
+                                      fontWeight: 700,
+                                      fontSize: "12px",
+                                      letterSpacing: "1px",
+                                      marginBottom: "18px",
+                                    }}
+                                  >
+                                    IDENTIFIERS
+                                  </h6>
 
-                                <div className="mb-2">
-                                  <strong>
-                                    Log ID
-                                  </strong>
-                                  <div>
-                                    92lc0222-5b81
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      flexDirection: "column",
+                                      gap: "12px",
+                                    }}
+                                  >
+                                    <div style={{ display: "flex", alignItems: "center" }}>
+                                      <div
+                                        style={{
+                                          width: "130px",
+                                          color: "#667085",
+                                          fontSize: "14px",
+                                          fontWeight: 500,
+                                        }}
+                                      >
+                                        Log ID
+                                      </div>
+
+                                      <div
+                                        style={{
+                                          color: "#344054",
+                                          fontSize: "14px",
+                                          fontWeight: 600,
+                                        }}
+                                      >
+                                        0c4a45a9-9c07-4d8b-86e1-0b572014381a
+                                      </div>
+                                    </div>
+
+                                    <div style={{ display: "flex", alignItems: "center" }}>
+                                      <div
+                                        style={{
+                                          width: "130px",
+                                          color: "#667085",
+                                          fontSize: "14px",
+                                          fontWeight: 500,
+                                        }}
+                                      >
+                                        Request ID
+                                      </div>
+
+                                      <div
+                                        style={{
+                                          color: "#344054",
+                                          fontSize: "14px",
+                                          fontWeight: 600,
+                                        }}
+                                      >
+                                        9ba16131-aee4-4f29-af21-b152c6597496
+                                      </div>
+                                    </div>
+
+                                    <div style={{ display: "flex", alignItems: "center" }}>
+                                      <div
+                                        style={{
+                                          width: "130px",
+                                          color: "#667085",
+                                          fontSize: "14px",
+                                          fontWeight: 500,
+                                        }}
+                                      >
+                                        Session ID
+                                      </div>
+
+                                      <div
+                                        style={{
+                                          color: "#344054",
+                                          fontSize: "14px",
+                                          fontWeight: 600,
+                                        }}
+                                      >
+                                        97de576f
+                                      </div>
+                                    </div>
+
+                                    <div style={{ display: "flex", alignItems: "center" }}>
+                                      <div
+                                        style={{
+                                          width: "130px",
+                                          color: "#667085",
+                                          fontSize: "14px",
+                                          fontWeight: 500,
+                                        }}
+                                      >
+                                        Environment
+                                      </div>
+
+                                      <div
+                                        style={{
+                                          color: "#344054",
+                                          fontSize: "14px",
+                                          fontWeight: 600,
+                                        }}
+                                      >
+                                        Development
+                                      </div>
+                                    </div>
+
+                                    <div style={{ display: "flex", alignItems: "center" }}>
+                                      <div
+                                        style={{
+                                          width: "130px",
+                                          color: "#667085",
+                                          fontSize: "14px",
+                                          fontWeight: 500,
+                                        }}
+                                      >
+                                        Actor User ID
+                                      </div>
+
+                                      <div
+                                        style={{
+                                          color: "#344054",
+                                          fontSize: "14px",
+                                          fontWeight: 600,
+                                        }}
+                                      >
+                                        1
+                                      </div>
+                                    </div>
                                   </div>
-                                </div>
-
-                                <div className="mb-2">
-                                  <strong>
-                                    Request ID
-                                  </strong>
-                                  <div>
-                                    79aee03c
-                                  </div>
-                                </div>
-
-                                <div className="mb-2">
-                                  <strong>
-                                    Session ID
-                                  </strong>
-                                  <div>
-                                    97de576f
-                                  </div>
-                                </div>
-
-                                <div className="mb-2">
-                                  <strong>
-                                    Environment
-                                  </strong>
-                                  <div>
-                                    Development
-                                  </div>
-                                </div>
-
-                                <div>
-                                  <strong>
-                                    Actor User ID
-                                  </strong>
-                                  <div>1</div>
                                 </div>
                               </div>
                             </div>
@@ -1151,7 +1240,7 @@ export default function SuperAdminDashboard() {
                                 }}
                               >
                                 {log.type ===
-                                "success" ? (
+                                  "success" ? (
                                   <>
                                     <h6
                                       style={{
@@ -1234,7 +1323,7 @@ export default function SuperAdminDashboard() {
               </tbody>
             </table>
           </div>
-          <br/>
+          <br />
         </div>
       )}
     </div>
