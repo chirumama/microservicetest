@@ -115,6 +115,19 @@ export default function Dashboard() {
               <FaCogs className="me-2" />
               Manage Applications
             </button>
+
+            
+            <button
+  className="btn btn-dark d-flex align-items-center"
+  onClick={() => navigate("/application-logs")}
+  style={{
+    borderRadius: "10px",
+    padding: "10px 18px",
+    fontWeight: 500,
+  }}
+>
+  Application Logs
+</button>
           </div>
         </div>
 
