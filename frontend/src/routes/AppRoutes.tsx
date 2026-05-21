@@ -8,6 +8,7 @@ import ApplicationDetails from "../pages/applications/ApplicationDetails";
 import SuperAdminDashboard from "../pages/dashboard/SuperAdminDashboard";
 import ViewDetail from "../pages/applications/ViewDetail";
 // import ViewDetails from "../pages/applications/ViewDetails";
+import HealthPage from "../pages/health/HealthPage";
 import { useAuth } from "../context/AuthContext";
 
 
@@ -37,6 +38,7 @@ export default function AppRoutes() {
           path="/microservice/:id"
           element={<ViewDetail />}
         />
+        <Route path="/health" element={<HealthPage />} />
         {/* <Route
   path="/microservice/:id"
   element={<ViewDetails />}

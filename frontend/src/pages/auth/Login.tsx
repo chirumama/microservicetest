@@ -353,3 +353,155 @@ export default function Login() {
     </div>
   );
 }
+
+// import { useState, type ChangeEvent } from "react";
+// import { useNavigate } from "react-router-dom";
+// import { useAuth } from "../../context/AuthContext";
+// import { FaEnvelope, FaLock } from "react-icons/fa";
+// import { IoEyeOutline, IoEyeOffOutline } from "react-icons/io5";
+// import InputField from "../../components/common/InputField";
+
+// export default function Login() {
+//   const [email, setEmail] = useState("");
+//   const [password, setPassword] = useState("");
+
+//   const [showPassword, setShowPassword] = useState(false);
+//   const [loading, setLoading] = useState(false);
+
+//   const [errors, setErrors] = useState<{
+//     email?: string;
+//     password?: string;
+//   }>({});
+
+//   const { login } = useAuth();
+//   const navigate = useNavigate();
+
+//   // ── Frontend-only Login ───────────────────────────────────────────────
+//   const handleLogin = async () => {
+//     const newErrors: typeof errors = {};
+
+//     if (!email.trim()) {
+//       newErrors.email = "Email is required";
+//     }
+
+//     if (!password.trim()) {
+//       newErrors.password = "Password is required";
+//     }
+
+//     if (Object.keys(newErrors).length) {
+//       setErrors(newErrors);
+//       return;
+//     }
+
+//     setLoading(true);
+
+//     try {
+//       // SuperAdmin Login
+//       if (
+//         email === "superadmin@gmail.com" &&
+//         password === "123456"
+//       ) {
+//         login(1, 1, "SuperAdmin", email);
+
+//         navigate("/superadmin-dashboard");
+//         return;
+//       }
+
+//       // Admin/User Login
+//       login(2, 2, "Admin", email);
+
+//       navigate("/dashboard");
+//     } catch (err) {
+//       console.log(err);
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   return (
+//     <div className="d-flex vh-100 justify-content-center align-items-center bg-light">
+//       <div className="login-card">
+//         <h3 className="text-center mb-4">System Login</h3>
+
+//         <InputField
+//           label="Email"
+//           type="email"
+//           value={email}
+//           onChange={(e: ChangeEvent<HTMLInputElement>) => {
+//             setEmail(e.target.value);
+
+//             if (errors.email) {
+//               setErrors((prev) => ({
+//                 ...prev,
+//                 email: "",
+//               }));
+//             }
+//           }}
+//           placeholder="Enter email..."
+//           fullWidth
+//           error={!!errors.email}
+//           helperText={errors.email}
+//           startIcon={<FaEnvelope style={{ color: "gray" }} />}
+//         />
+
+//         <br />
+//         <br />
+
+//         <InputField
+//           label="Password"
+//           type={showPassword ? "text" : "password"}
+//           value={password}
+//           onChange={(e: ChangeEvent<HTMLInputElement>) => {
+//             setPassword(e.target.value);
+
+//             if (errors.password) {
+//               setErrors((prev) => ({
+//                 ...prev,
+//                 password: "",
+//               }));
+//             }
+//           }}
+//           placeholder="Enter password..."
+//           fullWidth
+//           error={!!errors.password}
+//           helperText={errors.password}
+//           startIcon={<FaLock style={{ color: "gray" }} />}
+//           endIcon={
+//             <span
+//               onClick={() => setShowPassword(!showPassword)}
+//               style={{ cursor: "pointer" }}
+//             >
+//               {showPassword ? (
+//                 <IoEyeOutline />
+//               ) : (
+//                 <IoEyeOffOutline />
+//               )}
+//             </span>
+//           }
+//         />
+
+//         <br />
+//         <br />
+
+//         <button
+//           className="login-btn"
+//           onClick={handleLogin}
+//           disabled={loading}
+//         >
+//           {loading ? "Logging in..." : "Login"}
+//         </button>
+
+//         <p
+//           className="text-center mt-3"
+//           style={{
+//             fontSize: 14,
+//             color: "gray",
+//           }}
+//         >
+//           SuperAdmin:
+//           superadmin@gmail.com / 123456
+//         </p>
+//       </div>
+//     </div>
+//   );
+// }

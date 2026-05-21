@@ -160,23 +160,47 @@ export default function ViewDetail() {
 
         {/* Page header */}
         <div className="d-flex align-items-center gap-3 mb-4">
-          <button
-            className="btn btn-outline-secondary"
-            onClick={() => navigate("/dashboard")}
-            style={{ borderRadius: "10px", width: "42px", height: "42px", padding: 0 }}
-          >
-            <FaArrowLeft />
-          </button>
-          <div>
-            <h2 className="mb-0" style={{ fontWeight: 700 }}>
-              {service.name}
-            </h2>
-            <p className="text-muted mb-0" style={{ fontSize: "13px" }}>
-              Gateway:{" "}
-              <code style={{ color: "#667eea" }}>{service.gatewayBaseUrl}</code>
-            </p>
-          </div>
-        </div>
+  <button
+    className="btn btn-outline-secondary"
+    onClick={() => navigate("/dashboard")}
+    style={{
+      borderRadius: "10px",
+      width: "42px",
+      height: "42px",
+      padding: 0,
+    }}
+  >
+    <FaArrowLeft />
+  </button>
+
+  <div>
+    <h2 className="mb-0" style={{ fontWeight: 700 }}>
+      {service.name}
+    </h2>
+
+    <p className="text-muted mb-0" style={{ fontSize: "13px" }}>
+      Gateway:{" "}
+      <code style={{ color: "#667eea" }}>
+        {service.gatewayBaseUrl}
+      </code>
+    </p>
+  </div>
+
+  {/* Move button to right side */}
+  <div className="ms-auto">
+    <button
+      className="btn btn-dark"
+      style={{
+        borderRadius: "10px",
+        padding: "10px 18px",
+        fontWeight: 600,
+      }}
+      onClick={() => navigate("/health")}
+    >
+      Check Health
+    </button>
+  </div>
+</div>
 
         {/* ── Gateway Auth Banner ──────────────────────────────────────────── */}
         <div
