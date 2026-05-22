@@ -102,68 +102,124 @@ export default function Dashboard() {
       <div className="dashboard-container p-3 p-md-4">
 
         {/* Header */}
-        <div className="d-flex flex-column flex-xl-row justify-content-between align-items-start align-items-xl-center gap-3 mb-4">
+<div className="d-flex justify-content-between align-items-center mb-4">
 
-          <h2 className="mb-0">Microservices</h2>
+  <h2 className="mb-0">Microservices</h2>
 
-          {/* Buttons */}
-          <div
-  className="d-flex flex-column flex-sm-row flex-wrap gap-2 ms-auto"
->
+  {/* Desktop Buttons */}
+  <div className="d-none d-md-flex gap-2 ms-auto">
 
-            {/* Refresh */}
-            <button
-              className="btn btn-outline-secondary d-flex align-items-center justify-content-center"
-              onClick={runHealthChecks}
-              disabled={refreshing}
-              style={{
-                borderRadius: "10px",
-                padding: "10px 18px",
-                fontWeight: 500,
-              }}
-            >
-              <FaSyncAlt
-                className="me-2"
-                style={{
-                  animation: refreshing
-                    ? "spin 1s linear infinite"
-                    : "none",
-                }}
-              />
+    {/* Refresh */}
+    <button
+      className="btn btn-outline-secondary d-flex align-items-center justify-content-center"
+      onClick={runHealthChecks}
+      disabled={refreshing}
+      style={{
+        borderRadius: "10px",
+        padding: "10px 18px",
+        fontWeight: 500,
+      }}
+    >
+      <FaSyncAlt
+        className="me-2"
+        style={{
+          animation: refreshing
+            ? "spin 1s linear infinite"
+            : "none",
+        }}
+      />
 
-              {refreshing
-                ? "Checking..."
-                : "Refresh"}
-            </button>
+      {refreshing
+        ? "Checking..."
+        : "Refresh"}
+    </button>
 
-            {/* Manage Applications */}
-            <button
-              className="btn btn-dark d-flex align-items-center justify-content-center"
-              onClick={() => navigate("/manage")}
-              style={{
-                borderRadius: "10px",
-                padding: "10px 18px",
-                fontWeight: 500,
-              }}
-            >
-              <FaCogs className="me-2" />
-              Manage Applications
-            </button>
+    {/* Manage */}
+    <button
+      className="btn btn-dark d-flex align-items-center justify-content-center"
+      onClick={() => navigate("/manage")}
+      style={{
+        borderRadius: "10px",
+        padding: "10px 18px",
+        fontWeight: 500,
+      }}
+    >
+      <FaCogs className="me-2" />
+      Manage Applications
+    </button>
 
-            {/* Logs */}
-            <button
-              className="btn btn-dark d-flex align-items-center justify-content-center"
-              onClick={() => navigate("/application-logs")}
-              style={{
-                borderRadius: "10px",
-                padding: "10px 18px",
-                fontWeight: 500,
-              }}
-            >
-              Application Logs
-            </button>
-          </div>
-        </div>
+    {/* Logs */}
+    <button
+      className="btn btn-dark d-flex align-items-center justify-content-center"
+      onClick={() => navigate("/application-logs")}
+      style={{
+        borderRadius: "10px",
+        padding: "10px 18px",
+        fontWeight: 500,
+      }}
+    >
+      Application Logs
+    </button>
+  </div>
+
+  {/* Mobile Hamburger */}
+  <div className="dropdown d-md-none ms-auto">
+
+    <button
+      className="btn btn-dark"
+      type="button"
+      data-bs-toggle="dropdown"
+      aria-expanded="false"
+      style={{
+        borderRadius: "10px",
+        width: "44px",
+        height: "44px",
+        padding: 0,
+        fontSize: "20px",
+        fontWeight: 700,
+      }}
+    >
+      ☰
+    </button>
+
+    <ul
+      className="dropdown-menu dropdown-menu-end shadow border-0"
+      style={{
+        borderRadius: "14px",
+        minWidth: "230px",
+      }}
+    >
+      <li>
+        <button
+          className="dropdown-item py-2"
+          onClick={runHealthChecks}
+        >
+          {refreshing
+            ? "Checking..."
+            : "Refresh"}
+        </button>
+      </li>
+
+      <li>
+        <button
+          className="dropdown-item py-2"
+          onClick={() => navigate("/manage")}
+        >
+          Manage Applications
+        </button>
+      </li>
+
+      <li>
+        <button
+          className="dropdown-item py-2"
+          onClick={() => navigate("/application-logs")}
+        >
+          Application Logs
+        </button>
+      </li>
+    </ul>
+  </div>
+</div>
 
         {/* Cards */}
         <div className="row g-4">

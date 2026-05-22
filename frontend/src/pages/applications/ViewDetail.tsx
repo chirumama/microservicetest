@@ -21,11 +21,11 @@ interface EndpointState {
 // Colour per HTTP method badge
 function methodColor(method: string): string {
   switch (method) {
-    case "GET":    return "#28a745";
-    case "POST":   return "#667eea";
-    case "PUT":    return "#fd7e14";
+    case "GET": return "#28a745";
+    case "POST": return "#667eea";
+    case "PUT": return "#fd7e14";
     case "DELETE": return "#dc3545";
-    default:       return "#6c757d";
+    default: return "#6c757d";
   }
 }
 
@@ -39,14 +39,14 @@ export default function ViewDetail() {
   const [gatewayToken, setGatewayToken] = useState<string | null>(
     () => localStorage.getItem("gatewayToken")
   );
-  const [clientId, setClientId]         = useState("");
+  const [clientId, setClientId] = useState("");
   const [clientSecret, setClientSecret] = useState("");
   const [tokenLoading, setTokenLoading] = useState(false);
-  const [tokenError, setTokenError]     = useState("");
+  const [tokenError, setTokenError] = useState("");
 
   function persistToken(token: string | null) {
     if (token) localStorage.setItem("gatewayToken", token);
-    else        localStorage.removeItem("gatewayToken");
+    else localStorage.removeItem("gatewayToken");
     setGatewayToken(token);
   }
 
@@ -72,13 +72,13 @@ export default function ViewDetail() {
   // ── Per-endpoint state initialised from config ──────────────────────────────
   const [endpointStates, setEndpointStates] = useState<EndpointState[]>(() =>
     (service?.endpoints ?? []).map((ep) => ({
-      isOpen:       false,
-      url:          `${service!.gatewayBaseUrl}${ep.path}`,
+      isOpen: false,
+      url: `${service!.gatewayBaseUrl}${ep.path}`,
       isEditingUrl: false,
-      body:         ep.defaultBody ?? "",
-      response:     null,
-      loading:      false,
-      error:        "",
+      body: ep.defaultBody ?? "",
+      response: null,
+      loading: false,
+      error: "",
     }))
   );
 
@@ -160,47 +160,47 @@ export default function ViewDetail() {
 
         {/* Page header */}
         <div className="d-flex align-items-center gap-3 mb-4">
-  <button
-    className="btn btn-outline-secondary"
-    onClick={() => navigate("/dashboard")}
-    style={{
-      borderRadius: "10px",
-      width: "42px",
-      height: "42px",
-      padding: 0,
-    }}
-  >
-    <FaArrowLeft />
-  </button>
+          <button
+            className="btn btn-outline-secondary"
+            onClick={() => navigate("/dashboard")}
+            style={{
+              borderRadius: "10px",
+              width: "42px",
+              height: "42px",
+              padding: 0,
+            }}
+          >
+            <FaArrowLeft />
+          </button>
 
-  <div>
-    <h2 className="mb-0" style={{ fontWeight: 700 }}>
-      {service.name}
-    </h2>
+          <div>
+            <h2 className="mb-0" style={{ fontWeight: 700 }}>
+              {service.name}
+            </h2>
 
-    <p className="text-muted mb-0" style={{ fontSize: "13px" }}>
-      Gateway:{" "}
-      <code style={{ color: "#667eea" }}>
-        {service.gatewayBaseUrl}
-      </code>
-    </p>
-  </div>
+            <p className="text-muted mb-0" style={{ fontSize: "13px" }}>
+              Gateway:{" "}
+              <code style={{ color: "#667eea" }}>
+                {service.gatewayBaseUrl}
+              </code>
+            </p>
+          </div>
 
-  {/* Move button to right side */}
-  <div className="ms-auto">
-    <button
-      className="btn btn-dark"
-      style={{
-        borderRadius: "10px",
-        padding: "10px 18px",
-        fontWeight: 600,
-      }}
-      onClick={() => navigate("/health")}
-    >
-      Check Health
-    </button>
-  </div>
-</div>
+          {/* Move button to right side */}
+          <div className="ms-auto">
+            <button
+              className="btn btn-dark"
+              style={{
+                borderRadius: "10px",
+                padding: "10px 18px",
+                fontWeight: 600,
+              }}
+              onClick={() => navigate("/health")}
+            >
+              Check Health
+            </button>
+          </div>
+        </div>
 
         {/* ── Gateway Auth Banner ──────────────────────────────────────────── */}
         <div
