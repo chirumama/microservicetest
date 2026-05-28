@@ -1,13 +1,11 @@
-version: '3.9'
-
 services:
 
   postgres:
-    image: postgres:16
+    image: postgres:17
     container_name: microservice-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: microservice_db
+      POSTGRES_DB: microservice_hub
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres123
     ports:
@@ -25,6 +23,17 @@ services:
       - "5000:8080"
     depends_on:
       - postgres
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=microservice-postgres;Port=5432;Database=microservice_hub;Username=postgres;Password=postgres123
+      - ApisixAdmin__BaseUrl=http://apisix-gateway:9180
+      - ApisixAdmin__ApiKey=your-super-secret-admin-key-change-this
+      - Email__SmtpHost=smtp.gmail.com
+      - Email__SmtpPort=587
+      - Email__SmtpUser=yogeshunlock0991@gmail.com
+      - Email__SmtpPassword=fods anqo dbie dune
+      - Email__FromAddress=yogeshunlock0991@gmail.com
+      - Email__FromName=PayPoint India
+
 
   frontend:
     build:
@@ -33,7 +42,7 @@ services:
     container_name: microservice-frontend
     restart: unless-stopped
     ports:
-      - "3000:80"
+      - "3001:80"
     depends_on:
       - backend
 
