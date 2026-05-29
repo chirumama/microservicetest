@@ -20,8 +20,8 @@ export const MICROSERVICES: MicroserviceConfig[] = [
   {
     id: 1,
     name: "Pan Service",
-    gatewayBaseUrl: "http://localhost:9080",
-    healthPath: "/api/v1/pan/health",
+    gatewayBaseUrl: "http://3.110.46.238:9000",
+    healthPath: "/api/v1/pan/health", 
     endpoints: [
       {
         method: "POST",
@@ -41,54 +41,12 @@ export const MICROSERVICES: MicroserviceConfig[] = [
       },
     ],
   },
-  {
-    id: 2,
-    name: "Passport Service",
-    gatewayBaseUrl: "http://localhost:9080",
-    healthPath: "/api/passport/health",
-    endpoints: [
-      {
-        method: "POST",
-        path: "/api/passport/verify",
-        description: "Verify passport details",
-        defaultBody: `{\n  "file_number": "BO1065733511221",\n  "date_of_birth": "2000-12-29",\n  "consent": "Y"\n}`,
-      },
-      {
-        method: "GET",
-        path: "/api/passport/health",
-        description: "Service health check",
-      },
-      {
-        method: "GET",
-        path: "/api/passport/health/db",
-        description: "Database health check",
-      },
-    ],
-  },
-  {
-    id: 3,
-    name: "GST Service",
-    gatewayBaseUrl: "http://localhost:9080",
-    healthPath: "/api/gst/health",
-    endpoints: [
-      {
-        method: "POST",
-        path: "/api/gst/verify",
-        description: "Verify GST number",
-        defaultBody: `{\n  "gstin": "22AAAAA0000A1Z5"\n}`,
-      },
-      {
-        method: "GET",
-        path: "/api/gst/health",
-        description: "Service health check",
-      },
-    ],
-  },
+
   {
     id: 4,
     name: "IP Lookup Service",
-    gatewayBaseUrl: "http://localhost:9080",
-    healthPath: "/v1/iplookup/8.8.8.8",   // no dedicated health, use a real lookup as probe
+    gatewayBaseUrl: "http://3.110.46.238:9000",
+    healthPath: "/v1/iplookup/health",   // no dedicated health, use a real lookup as  probe
     endpoints: [
       {
         method: "GET",
