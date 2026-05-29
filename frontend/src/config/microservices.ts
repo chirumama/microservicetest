@@ -18,7 +18,7 @@ export interface MicroserviceConfig {
 
 export const MICROSERVICES: MicroserviceConfig[] = [
   {
-    id: 1,
+    id: 2,
     name: "Pan Service",
     gatewayBaseUrl: "http://3.110.46.238:9000",
     healthPath: "/api/v1/pan/health", 
@@ -43,7 +43,7 @@ export const MICROSERVICES: MicroserviceConfig[] = [
   },
 
   {
-    id: 4,
+    id: 1,
     name: "IP Lookup Service",
     gatewayBaseUrl: "http://3.110.46.238:9000",
     healthPath: "/v1/iplookup/health",   // no dedicated health, use a real lookup as  probe
