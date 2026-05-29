@@ -45,7 +45,7 @@ export const MICROSERVICES: MicroserviceConfig[] = [
   {
     id: 1,
     name: "IP Lookup Service",
-    gatewayBaseUrl: "http://3.110.46.238:9000",
+    gatewayBaseUrl: "http://3.110.46.238:9080",
     healthPath: "/v1/iplookup/health",   // no dedicated health, use a real lookup as  probe
     endpoints: [
       {
