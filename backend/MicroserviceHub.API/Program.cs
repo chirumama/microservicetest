@@ -60,7 +60,7 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Register singletons FIRST so we can resolve for JWT config
+// Register singletons FIRST so we can resolve for JWT config's
 builder.Services.AddSingleton<RsaKeyProvider>();
 builder.Services.AddSingleton<OAuthTokenService>();
 
