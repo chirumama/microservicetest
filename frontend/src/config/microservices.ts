@@ -17,30 +17,30 @@ export interface MicroserviceConfig {
 }
 
 export const MICROSERVICES: MicroserviceConfig[] = [
-  {
-    id: 2,
-    name: "Pan Service",
-    gatewayBaseUrl: "http://3.110.46.238:9000",
-    healthPath: "/api/v1/pan/health", 
-    endpoints: [
-      {
-        method: "POST",
-        path: "/api/v1/pan/verify",
-        description: "Verify PAN card details",
-        defaultBody: `{\n  "id_number": "ABCDE1234F"\n}`,
-      },
-      {
-        method: "GET",
-        path: "/api/v1/pan/health",
-        description: "Service health check",
-      },
-      {
-        method: "GET",
-        path: "/api/v1/pan/health/database",
-        description: "Database health check",
-      },
-    ],
-  },
+  // {
+  //   id: 2,
+  //   name: "Pan Service",
+  //   gatewayBaseUrl: "http://3.110.46.238:9000",
+  //   healthPath: "/api/v1/pan/health", 
+  //   endpoints: [
+  //     {
+  //       method: "POST",
+  //       path: "/api/v1/pan/verify",
+  //       description: "Verify PAN card details",
+  //       defaultBody: `{\n  "id_number": "ABCDE1234F"\n}`,
+  //     },
+  //     {
+  //       method: "GET",
+  //       path: "/api/v1/pan/health",
+  //       description: "Service health check",
+  //     },
+  //     {
+  //       method: "GET",
+  //       path: "/api/v1/pan/health/database",
+  //       description: "Database health check",
+  //     },
+  //   ],
+  // },
 
   {
     id: 1,
