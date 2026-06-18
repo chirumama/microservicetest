@@ -1,0 +1,13 @@
+bin/
+obj/
+.vs/
+**/bin/
+**/obj/
+node_modules/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+Dockerfile*
+.idea/
+*.log

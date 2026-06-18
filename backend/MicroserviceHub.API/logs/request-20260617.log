@@ -1,0 +1,14 @@
+2026-06-17 12:00:33.166 +05:30 [INF] [REQUEST] GET /v1.0.1/Application | IP: ::1 | Body: (empty)
+2026-06-17 12:04:26.474 +05:30 [INF] [REQUEST] POST /v1.0.1/auth/login | IP: ::1 | Body: {
+  "email": "yogeshchauhan0991@gmail.com",
+  "password": "YYY#04#ccc"
+}
+2026-06-17 12:05:28.757 +05:30 [INF] [REQUEST] POST /v1.0.1/auth/login | IP: ::1 | Body: {
+  "email": "yogeshchauhan0991@gmail.com",
+  "password": "Unlock@123Y"
+}
+2026-06-17 12:47:45.219 +05:30 [INF] [REQUEST] POST /v1.0.1/auth/login | IP: ::1 | Body: {"email":"yogeshchauhan0991@gmail.com","password":"Unlock@123Y"}
+2026-06-17 12:50:16.573 +05:30 [INF] [REQUEST] POST /v1.0.1/auth/verify-otp | IP: ::1 | Body: {"userId":1,"otp":"793253"}
+2026-06-17 12:51:11.315 +05:30 [INF] [REQUEST] POST /v1.0.1/auth/create-user | IP: ::1 | Body: {"email":"chiragmohod28@gmail.com","password":"Admin@123","roleId":2}
+2026-06-17 12:51:43.156 +05:30 [INF] [REQUEST] POST /v1.0.1/auth/login | IP: ::1 | Body: {"email":"chiragmohod28@gmail.com","password":"Admin@123"}
+2026-06-17 12:52:37.426 +05:30 [INF] [REQUEST] POST /v1.0.1/auth/verify-otp | IP: ::1 | Body: {"userId":2,"otp":"626791"}

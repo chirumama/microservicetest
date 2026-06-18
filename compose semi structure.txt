@@ -1,0 +1,24 @@
+docker network create microservice-net
+
+docker run -d `
+  --name mircroservice-postgres `
+  --network microservice-net `
+  -e POSTGRES_DB=microservice_hub `
+  -e POSTGRES_USER=postgres `
+  -e POSTGRES_PASSWORD=postgres123 `
+  -p 5432:5432 `
+  mircroservicedatabase:1.0
+
+docker run -d `
+  --name mircroservice-backend `
+  --network microservice-net `
+  --link mircroservice-postgres:microservice-postgres `
+  -e ConnectionStrings__DefaultConnection="Host=mircroservice-postgres;Port=5432;Database=microservice_hub;Username=postgres;Password=postgres123" `
+  -p 5000:8080 `
+  mircroservicebackend:1.0
+
+docker run -d `
+  --name microservice-frontend `
+  --network microservice-net `
+  -p 3001:80 `
+  microservicefront:1.2

@@ -1,0 +1,337 @@
+[
+  {
+    "ContainingType": "MicroserviceHub.API.Controllers.RouteSyncController",
+    "Method": "SyncRoutes",
+    "RelativePath": "v1.0.1/admin/sync-routes",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "MicroserviceHub.API.Controllers.ApplicationController",
+    "Method": "Create",
+    "RelativePath": "v1.0.1/Application",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "MicroserviceHub.API.Application.DTOs.Request.CreateApplicationRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "MicroserviceHub.API.Controllers.ApplicationController",
+    "Method": "GetApplications",
+    "RelativePath": "v1.0.1/Application",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "MicroserviceHub.API.Controllers.ApplicationController",
+    "Method": "GetDetails",
+    "RelativePath": "v1.0.1/Application/{appId}/details",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "appId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "MicroserviceHub.API.Controllers.ApplicationController",
+    "Method": "RegenerateSecret",
+    "RelativePath": "v1.0.1/Application/{appId}/keys/{keyId}/regenerate",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "appId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "keyId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "MicroserviceHub.API.Controllers.ApplicationController",
+    "Method": "RevokeKey",
+    "RelativePath": "v1.0.1/Application/{appId}/keys/{keyId}/revoke",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "appId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "keyId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "MicroserviceHub.API.Controllers.ApplicationController",
+    "Method": "GetAccessToken",
+    "RelativePath": "v1.0.1/Application/{appId}/keys/{keyId}/token",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "appId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "keyId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "MicroserviceHub.API.Controllers.ApplicationController",
+    "Method": "GetRoutes",
+    "RelativePath": "v1.0.1/Application/{appId}/microservices/{msId}/routes",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "appId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "msId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "MicroserviceHub.API.Controllers.ApplicationController",
+    "Method": "UpdateRoutes",
+    "RelativePath": "v1.0.1/Application/{appId}/microservices/{msId}/routes",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "appId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "msId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "MicroserviceHub.API.Application.DTOs.Request.UpdateRouteAccessRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "MicroserviceHub.API.Controllers.ApplicationController",
+    "Method": "UpdateSettings",
+    "RelativePath": "v1.0.1/Application/{appId}/settings",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "appId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "MicroserviceHub.API.Application.DTOs.Request.UpdateApplicationSettingsRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "MicroserviceHub.API.Controllers.ApplicationController",
+    "Method": "GetMicroservices",
+    "RelativePath": "v1.0.1/Application/microservices",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "MicroserviceHub.API.Controllers.AuthController",
+    "Method": "CreateUser",
+    "RelativePath": "v1.0.1/auth/create-user",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "MicroserviceHub.API.Application.DTOs.Request.CreateUserRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "MicroserviceHub.API.Controllers.AuthController",
+    "Method": "ForgotPassword",
+    "RelativePath": "v1.0.1/auth/forgot-password",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "MicroserviceHub.API.Application.DTOs.Request.ForgotPasswordRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "MicroserviceHub.API.Controllers.AuthController",
+    "Method": "Login",
+    "RelativePath": "v1.0.1/auth/login",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "MicroserviceHub.API.Application.DTOs.Request.LoginRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "MicroserviceHub.API.Controllers.AuthController",
+    "Method": "ResetPassword",
+    "RelativePath": "v1.0.1/auth/reset-password",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "MicroserviceHub.API.Application.DTOs.Request.ResetPasswordRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "MicroserviceHub.API.Controllers.AuthController",
+    "Method": "GetUsers",
+    "RelativePath": "v1.0.1/auth/users",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "MicroserviceHub.API.Controllers.AuthController",
+    "Method": "VerifyOtp",
+    "RelativePath": "v1.0.1/auth/verify-otp",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "MicroserviceHub.API.Application.DTOs.Request.VerifyOtpRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "MicroserviceHub.API.Controllers.OAuthController",
+    "Method": "Jwks",
+    "RelativePath": "v1.0.1/oauth/.well-known/jwks.json",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "MicroserviceHub.API.Controllers.OAuthController",
+    "Method": "PublicKeyPem",
+    "RelativePath": "v1.0.1/oauth/.well-known/public-key.pem",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "MicroserviceHub.API.Controllers.OAuthController",
+    "Method": "SetupRoute",
+    "RelativePath": "v1.0.1/oauth/setup-route",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "MicroserviceHub.API.Application.DTOs.Request.SetupRouteRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "MicroserviceHub.API.Controllers.OAuthController",
+    "Method": "Token",
+    "RelativePath": "v1.0.1/oauth/token",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "MicroserviceHub.API.Application.DTOs.Request.ClientCredentialsRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  }
+]

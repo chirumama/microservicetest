@@ -2,9 +2,12 @@ pipeline {
     agent any
 
     environment {
-        SERVER_IP = '3.110.46.238'
-        APP_DIR   = '/home/ubuntu/Microservice_Dash'
-        GIT_REPO  = 'https://github.com/paypoint/MicroserviceDashboard.git'
+        VM_IP    = '<VM_IP>'                       // TODO: put your VM's IP here, e.g. 192.168.56.10
+        VM_USER  = 'paypoint'
+        APP_DIR  = '/home/paypoint/microservice-dashboard'
+        GIT_REPO = 'https://github.com/chirumama/microservicetest.git'
+        GIT_BRANCH = 'master'
+        HEALTH_PORT = '3001'
     }
 
     stages {
@@ -12,19 +15,11 @@ pipeline {
         stage('Clone / Pull') {
             steps {
                 withCredentials([
-                    sshUserPrivateKey(credentialsId: 'ubuntu-server-ssh', keyFileVariable: 'SSH_KEY'),
-                    usernamePassword(credentialsId: 'github-creds', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')
+                    sshUserPrivateKey(credentialsId: 'vm-ssh-key', keyFileVariable: 'SSH_KEY')
                 ]) {
-                    sh '''
-                        ssh -i $SSH_KEY -o StrictHostKeyChecking=no ubuntu@''' + env.SERVER_IP + ''' "
-                            if [ -d \\"''' + env.APP_DIR + '''/.git\\" ]; then
-                                cd ''' + env.APP_DIR + '''
-                                git pull https://''' + '$GIT_USER' + ''':''' + '$GIT_TOKEN' + '''@github.com/paypoint/MicroserviceDashboard.git main
-                            else
-                                git clone https://''' + '$GIT_USER' + ''':''' + '$GIT_TOKEN' + '''@github.com/paypoint/MicroserviceDashboard.git ''' + env.APP_DIR + '''
-                            fi
-                        "
-                    '''
+                    bat """
+                        ssh -i "%SSH_KEY%" -o StrictHostKeyChecking=no %VM_USER%@%VM_IP% "if [ -d \\"%APP_DIR%/.git\\" ]; then cd %APP_DIR% && git pull origin %GIT_BRANCH%; else git clone -b %GIT_BRANCH% %GIT_REPO% %APP_DIR%; fi"
+                    """
                 }
             }
         }
@@ -32,15 +27,11 @@ pipeline {
         stage('Build & Deploy') {
             steps {
                 withCredentials([
-                    sshUserPrivateKey(credentialsId: 'ubuntu-server-ssh', keyFileVariable: 'SSH_KEY')
+                    sshUserPrivateKey(credentialsId: 'vm-ssh-key', keyFileVariable: 'SSH_KEY')
                 ]) {
-                    sh '''
-                        ssh -i $SSH_KEY -o StrictHostKeyChecking=no ubuntu@''' + env.SERVER_IP + ''' "
-                            cd ''' + env.APP_DIR + '''
-                            docker compose down
-                            docker compose up --build -d
-                        "
-                    '''
+                    bat """
+                        ssh -i "%SSH_KEY%" -o StrictHostKeyChecking=no %VM_USER%@%VM_IP% "cd %APP_DIR% && docker compose down && docker compose up --build -d"
+                    """
                 }
             }
         }
@@ -48,7 +39,13 @@ pipeline {
         stage('Health Check') {
             steps {
                 sleep(time: 20, unit: 'SECONDS')
-                sh "curl -f http://${SERVER_IP}:3001 || exit 1"
+                withCredentials([
+                    sshUserPrivateKey(credentialsId: 'vm-ssh-key', keyFileVariable: 'SSH_KEY')
+                ]) {
+                    bat """
+                        ssh -i "%SSH_KEY%" -o StrictHostKeyChecking=no %VM_USER%@%VM_IP% "curl -f http://localhost:%HEALTH_PORT% || exit 1"
+                    """
+                }
             }
         }
     }

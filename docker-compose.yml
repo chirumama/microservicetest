@@ -1,7 +1,11 @@
+version: '3.8'
+
 services:
 
   postgres:
-    image: postgres:17
+    build:
+      context: .
+      dockerfile: docker/postgres.Dockerfile
     container_name: microservice-postgres
     restart: unless-stopped
     environment:
@@ -12,6 +16,11 @@ services:
       - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   backend:
     build:
@@ -22,7 +31,8 @@ services:
     ports:
       - "5000:8080"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     environment:
       - ConnectionStrings__DefaultConnection=Host=microservice-postgres;Port=5432;Database=microservice_hub;Username=postgres;Password=postgres123
       - ApisixAdmin__BaseUrl=http://apisix-gateway:9180
@@ -30,10 +40,9 @@ services:
       - Email__SmtpHost=smtp.gmail.com
       - Email__SmtpPort=587
       - Email__SmtpUser=yogeshunlock0991@gmail.com
-      - Email__SmtpPassword=fods anqo dbie dune
+      - Email__SmtpPassword=fodsanqodbiedune
       - Email__FromAddress=yogeshunlock0991@gmail.com
       - Email__FromName=PayPoint India
-
 
   frontend:
     build:
@@ -45,6 +54,12 @@ services:
       - "3001:80"
     depends_on:
       - backend
+    networks:
+      - microservice-net
 
 volumes:
   postgres-data:
+
+networks:
+  microservice-net:
+    driver: bridge
