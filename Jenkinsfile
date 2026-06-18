@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        VM_IP    = '<VM_IP>'                       // TODO: put your VM's IP here, e.g. 192.168.56.10
+        VM_IP    = '192.168.83.134'                       // TODO: put your VM's IP here, e.g. 192.168.56.10
         VM_USER  = 'paypoint'
         APP_DIR  = '/home/paypoint/microservice-dashboard'
         GIT_REPO = 'https://github.com/chirumama/microservicetest.git'
